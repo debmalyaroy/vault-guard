@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --font-mono: 'Courier New', Courier, monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-zinc-900 text-green-500 font-mono antialiased transition-colors duration-300;
+    background-image:
+      linear-gradient(rgba(0, 255, 0, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  body.light-theme {
+    @apply bg-stone-100 text-blue-800;
+    background-image:
+      linear-gradient(rgba(0, 0, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 255, 0.05) 1px, transparent 1px);
+  }
+}
+
+.ascii-box {
+  @apply border-2 border-green-500 p-4 relative bg-zinc-900/90 transition-colors duration-300;
+}
+
+body.light-theme .ascii-box {
+  @apply border-blue-600 bg-white/90;
+}
+
+.ascii-box::before {
+  content: '+';
+  @apply absolute -top-3 -left-2 text-green-500 bg-zinc-900 px-1 transition-colors duration-300;
+}
+body.light-theme .ascii-box::before {
+  @apply text-blue-600 bg-stone-100;
+}
+
+.ascii-box::after {
+  content: '+';
+  @apply absolute -top-3 -right-2 text-green-500 bg-zinc-900 px-1 transition-colors duration-300;
+}
+body.light-theme .ascii-box::after {
+  @apply text-blue-600 bg-stone-100;
+}
+
+.ascii-box-bottom::before {
+  content: '+';
+  @apply absolute -bottom-3 -left-2 text-green-500 bg-zinc-900 px-1 transition-colors duration-300;
+}
+body.light-theme .ascii-box-bottom::before {
+  @apply text-blue-600 bg-stone-100;
+}
+
+.ascii-box-bottom::after {
+  content: '+';
+  @apply absolute -bottom-3 -right-2 text-green-500 bg-zinc-900 px-1 transition-colors duration-300;
+}
+body.light-theme .ascii-box-bottom::after {
+  @apply text-blue-600 bg-stone-100;
+}
+
+.ascii-title {
+  @apply absolute -top-3 left-4 bg-zinc-900 px-2 text-green-400 font-bold tracking-widest transition-colors duration-300;
+}
+body.light-theme .ascii-title {
+  @apply bg-stone-100 text-blue-700;
+}
+
+.ascii-button {
+  @apply border border-green-500 px-4 py-2 hover:bg-green-500 hover:text-black transition-colors cursor-pointer uppercase text-sm disabled:opacity-50 disabled:cursor-not-allowed;
+}
+body.light-theme .ascii-button {
+  @apply border-blue-600 hover:bg-blue-600 hover:text-white text-blue-700;
+}
+
+/* Custom Scrollbar for terminal feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-zinc-900;
+}
+body.light-theme ::-webkit-scrollbar-track {
+  @apply bg-stone-200;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-green-500;
+}
+body.light-theme ::-webkit-scrollbar-thumb {
+  @apply bg-blue-500;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-green-600;
+}
+body.light-theme ::-webkit-scrollbar-thumb:hover {
+  @apply bg-blue-600;
+}
