@@ -52,4 +52,14 @@ data/*.db.lock
 # Backend binary
 backend/vaultguard
 backend/*.exe
+
+# Backend runtime artifacts
+backend/output.log
+backend/*.log
+backend/targets/
+
+# Mermaid CLI generated SVGs (rendered via VitePress plugin instead)
+docs/*.svg
+
+# Claude Code workspace
 .claude/

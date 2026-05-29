@@ -8,11 +8,11 @@ export default withMermaid(
     description: 'Trust Infrastructure for Production AI Agents — 5-stage threat interception, blast radius mapping, and tamper-evident audit trails.',
     lang: 'en-US',
 
-    // Base URL for GitHub Pages (replace with your repo name if not a user/org site)
-    // base: '/vault-guard/',
+    // Base URL for GitHub Pages project pages
+    base: '/vault-guard/',
 
     head: [
-      ['link', { rel: 'icon', href: '/favicon.svg' }],
+      ['link', { rel: 'icon', href: '/vault-guard/logo.svg' }],
       ['meta', { name: 'theme-color', content: '#00ff41' }],
       ['meta', { name: 'og:title', content: 'VaultGuard — AI Agent Trust Infrastructure' }],
       ['meta', { name: 'og:description', content: '5-stage threat interception, blast radius mapping, and tamper-evident audit for production AI agents.' }],
