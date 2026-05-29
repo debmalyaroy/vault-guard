@@ -1,0 +1,1 @@
+export default { title: "VaultGuard", description: "The Trust Infrastructure Layer for Production AI Agents", themeConfig: { nav: [{ text: "Home", link: "/" }, { text: "Docs", link: "/ARCHITECTURE" }] } }
