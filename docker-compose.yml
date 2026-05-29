@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+  # ── Go Backend ────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: vaultguard/backend:latest
+    container_name: vaultguard-backend
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      DATA_DIR: /data
+      USE_MOCK_BEDROCK: "${USE_MOCK_BEDROCK:-true}"
+      GIN_MODE: release
+      CORS_ORIGINS: "*"
+      # AWS credentials — leave empty to stay in mock mode
+      AWS_REGION: "${AWS_REGION:-us-east-1}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID:-}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY:-}"
+      # Bedrock model selection
+      BEDROCK_CLASSIFIER_MODEL: "${BEDROCK_CLASSIFIER_MODEL:-amazon.nova-lite-v1:0}"
+      BEDROCK_REASONING_MODEL: "${BEDROCK_REASONING_MODEL:-meta.llama3-3-70b-instruct-v1:0}"
+      BEDROCK_POLICY_MODEL: "${BEDROCK_POLICY_MODEL:-amazon.nova-pro-v1:0}"
+      BEDROCK_EMBED_MODEL: "${BEDROCK_EMBED_MODEL:-amazon.titan-embed-text-v2:0}"
+    volumes:
+      # BoltDB persisted across container restarts
+      - vaultguard_data:/data
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - vaultguard
+
+  # ── React Frontend ────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # When using the nginx proxy (default), relative URLs work fine
+        VITE_API_URL: "${VITE_API_URL:-}"
+        VITE_WS_URL: "${VITE_WS_URL:-}"
+    image: vaultguard/frontend:latest
+    container_name: vaultguard-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - vaultguard
+
+volumes:
+  vaultguard_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      # Mount host ./data directory so BoltDB survives docker-compose down
+      device: "${PWD}/data"
+
+networks:
+  vaultguard:
+    driver: bridge

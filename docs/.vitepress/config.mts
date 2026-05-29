@@ -1,18 +1,21 @@
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 
+// https://vitepress.dev/reference/site-config
 export default withMermaid(
   defineConfig({
     title: 'VaultGuard',
     description: 'Trust Infrastructure for Production AI Agents — 5-stage threat interception, blast radius mapping, and tamper-evident audit trails.',
     lang: 'en-US',
 
-    // Uncomment and set to your repo name for GitHub Pages subdirectory deployment:
+    // Base URL for GitHub Pages (replace with your repo name if not a user/org site)
     // base: '/vault-guard/',
 
     head: [
-      ['link', { rel: 'icon', href: '/logo.svg' }],
+      ['link', { rel: 'icon', href: '/favicon.svg' }],
       ['meta', { name: 'theme-color', content: '#00ff41' }],
+      ['meta', { name: 'og:title', content: 'VaultGuard — AI Agent Trust Infrastructure' }],
+      ['meta', { name: 'og:description', content: '5-stage threat interception, blast radius mapping, and tamper-evident audit for production AI agents.' }],
     ],
 
     themeConfig: {
@@ -65,11 +68,21 @@ export default withMermaid(
         copyright: 'Copyright © 2025 VaultGuard. MIT License.',
       },
 
-      search: { provider: 'local' },
+      search: {
+        provider: 'local',
+      },
 
       editLink: {
         pattern: 'https://github.com/debmalyaroy/vault-guard/edit/develop/docs/:path',
         text: 'Edit this page on GitHub',
+      },
+
+      lastUpdated: {
+        text: 'Updated at',
+        formatOptions: {
+          dateStyle: 'full',
+          timeStyle: 'medium',
+        },
       },
     },
 
@@ -77,7 +90,7 @@ export default withMermaid(
       lineNumbers: true,
     },
 
-    // Mermaid — dark terminal theme matching the playground UI
+    // Mermaid config — matches the hacker terminal dark theme
     mermaid: {
       theme: 'dark',
       themeVariables: {
@@ -95,6 +108,7 @@ export default withMermaid(
         actorBorder: '#00ff41',
         actorTextColor: '#c9d1d9',
         activationBorderColor: '#00ff41',
+        sequenceNumberColor: '#00ff41',
         nodeBkg: '#161b22',
         nodeBorder: '#00ff41',
         clusterBkg: '#0d1117',

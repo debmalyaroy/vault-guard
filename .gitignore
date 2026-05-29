@@ -28,6 +28,27 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node
 node_modules/
+frontend/dist/
+frontend/.vite/
+
+# VitePress
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# BoltDB data (do not commit DB files)
+data/*.db
+data/*.db.lock
+
+# Docker
+.dockerignore
+
+# Backend binary
+backend/vaultguard
+backend/*.exe

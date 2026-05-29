@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VaultGuard — AI Agent Trust Infrastructure</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  /* ── Reset & Base ──────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #00ff41;
+    --green-dim: #00cc33;
+    --green-glow: rgba(0,255,65,.15);
+    --bg: #060b12;
+    --bg2: #0d1117;
+    --bg3: #161b22;
+    --border: #21262d;
+    --text: #e2e8f0;
+    --muted: #8b949e;
+    --blue: #58a6ff;
+    --orange: #f0883e;
+    --red: #f85149;
+    --yellow: #d29922;
+    --purple: #a371f7;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* ── Deck ──────────────────────────────────────────────────────────────── */
+  #deck {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 4rem;
+    opacity: 0;
+    transform: translateX(60px);
+    pointer-events: none;
+    transition: opacity .35s ease, transform .35s ease;
+    overflow: hidden;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
+  }
+
+  .slide.exit-left {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+
+  /* ── Scanline overlay ──────────────────────────────────────────────────── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,.04) 2px,
+      rgba(0,0,0,.04) 4px
+    );
+    z-index: 9999;
+  }
+
+  /* ── Progress bar ──────────────────────────────────────────────────────── */
+  #progress {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--blue));
+    transition: width .3s ease;
+    z-index: 1000;
+  }
+
+  /* ── Nav controls ──────────────────────────────────────────────────────── */
+  #nav {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 1000;
+  }
+
+  .nav-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--green);
+    padding: .4rem 1rem;
+    font-family: inherit;
+    font-size: .8rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all .2s;
+    letter-spacing: .05em;
+  }
+
+  .nav-btn:hover { background: var(--green-glow); border-color: var(--green); }
+  .nav-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+  #slide-counter {
+    color: var(--muted);
+    font-size: .8rem;
+    min-width: 5ch;
+    text-align: center;
+  }
+
+  /* ── Slide number ──────────────────────────────────────────────────────── */
+  .slide-num {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.8rem;
+    color: var(--muted);
+    font-size: .75rem;
+    opacity: .5;
+  }
+
+  /* ── Typography ────────────────────────────────────────────────────────── */
+  .slide-title {
+    font-size: clamp(1.6rem, 3vw, 2.6rem);
+    font-weight: 700;
+    color: var(--green);
+    text-align: center;
+    letter-spacing: .05em;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 30px var(--green-glow);
+  }
+
+  .slide-title span { color: var(--blue); }
+
+  .slide-subtitle {
+    font-size: clamp(.9rem, 1.6vw, 1.1rem);
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    max-width: 70ch;
+  }
+
+  h1.hero-title {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    letter-spacing: .08em;
+    color: transparent;
+    background: linear-gradient(135deg, var(--green) 0%, #00cc33 40%, var(--blue) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    margin-bottom: 1rem;
+    text-align: center;
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.15); }
+  }
+
+  /* ── Cards & Grids ─────────────────────────────────────────────────────── */
+  .card-grid {
+    display: grid;
+    gap: 1.2rem;
+    width: 100%;
+    max-width: 1100px;
+  }
+
+  .card-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.4rem 1.6rem;
+    transition: border-color .2s, transform .2s;
+  }
+
+  .card:hover {
+    border-color: var(--green-dim);
+    transform: translateY(-2px);
+  }
+
+  .card .card-icon {
+    font-size: 1.8rem;
+    margin-bottom: .6rem;
+  }
+
+  .card .card-title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: .4rem;
+    letter-spacing: .03em;
+  }
+
+  .card .card-body {
+    font-size: .82rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ── Pipeline ──────────────────────────────────────────────────────────── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    max-width: 1000px;
+    flex-wrap: nowrap;
+  }
+
+  .stage {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem .8rem;
+    text-align: center;
+    position: relative;
+    transition: all .2s;
+  }
+
+  .stage:hover { border-color: var(--green-dim); }
+
+  .stage-num {
+    position: absolute;
+    top: -.7rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green);
+    color: var(--bg);
+    font-size: .65rem;
+    font-weight: 700;
+    padding: .1rem .4rem;
+    border-radius: 10px;
+  }
+
+  .stage-icon { font-size: 1.4rem; margin-bottom: .3rem; }
+  .stage-name { font-size: .72rem; font-weight: 700; color: var(--text); }
+  .stage-desc { font-size: .64rem; color: var(--muted); margin-top: .2rem; line-height: 1.4; }
+
+  .arrow {
+    color: var(--green);
+    font-size: 1.2rem;
+    padding: 0 .3rem;
+    flex-shrink: 0;
+  }
+
+  /* ── Tables ────────────────────────────────────────────────────────────── */
+  table {
+    width: 100%;
+    max-width: 900px;
+    border-collapse: collapse;
+    font-size: .82rem;
+  }
+
+  th {
+    background: var(--bg3);
+    color: var(--green);
+    padding: .6rem .9rem;
+    text-align: left;
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  td {
+    padding: .55rem .9rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    vertical-align: top;
+  }
+
+  tr:hover td { background: var(--bg2); color: var(--text); }
+
+  td:first-child { color: var(--text); font-weight: 600; }
+  td code { color: var(--blue); font-size: .78rem; }
+
+  /* ── Badges ────────────────────────────────────────────────────────────── */
+  .badge {
+    display: inline-block;
+    padding: .2rem .5rem;
+    border-radius: 4px;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+
+  .badge-red    { background: rgba(248,81,73,.18); color: var(--red); border: 1px solid var(--red); }
+  .badge-orange { background: rgba(240,136,62,.18); color: var(--orange); border: 1px solid var(--orange); }
+  .badge-green  { background: rgba(0,255,65,.12); color: var(--green); border: 1px solid var(--green-dim); }
+  .badge-blue   { background: rgba(88,166,255,.15); color: var(--blue); border: 1px solid var(--blue); }
+  .badge-purple { background: rgba(163,113,247,.15); color: var(--purple); border: 1px solid var(--purple); }
+  .badge-yellow { background: rgba(210,153,34,.18); color: var(--yellow); border: 1px solid var(--yellow); }
+
+  /* ── Terminal box ──────────────────────────────────────────────────────── */
+  .terminal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem 1.6rem;
+    font-size: .82rem;
+    line-height: 1.8;
+    max-width: 700px;
+    width: 100%;
+    color: var(--muted);
+  }
+
+  .terminal .prompt { color: var(--green); margin-right: .5rem; }
+  .terminal .cmd { color: var(--text); }
+  .terminal .out { color: var(--muted); }
+  .terminal .success { color: var(--green); }
+  .terminal .err { color: var(--red); }
+  .terminal .info { color: var(--blue); }
+
+  /* ── List ──────────────────────────────────────────────────────────────── */
+  .check-list {
+    list-style: none;
+    font-size: .88rem;
+    line-height: 2;
+    color: var(--muted);
+  }
+
+  .check-list li::before {
+    content: '✓ ';
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  /* ── Two-col layout ────────────────────────────────────────────────────── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    width: 100%;
+    max-width: 1100px;
+    align-items: start;
+  }
+
+  /* ── Score bar ─────────────────────────────────────────────────────────── */
+  .score-bar {
+    background: var(--bg3);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: .4rem;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--red), var(--orange), var(--yellow), var(--green));
+    transition: width 1s ease;
+  }
+
+  /* ── Mermaid container ─────────────────────────────────────────────────── */
+  .diagram-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    width: 100%;
+    max-width: 900px;
+    overflow: auto;
+    max-height: 60vh;
+  }
+
+  .mermaid { font-size: 12px; }
+
+  /* ── Hero decorations ──────────────────────────────────────────────────── */
+  .hero-tagline {
+    color: var(--muted);
+    font-size: clamp(.8rem, 1.5vw, 1rem);
+    text-align: center;
+    margin-bottom: 2rem;
+    letter-spacing: .05em;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-val {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--green);
+  }
+
+  .stat-lbl {
+    font-size: .7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+
+  /* ── Blinking cursor ───────────────────────────────────────────────────── */
+  .cursor::after {
+    content: '_';
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* ── OWASP grid ────────────────────────────────────────────────────────── */
+  .owasp-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: .8rem;
+    max-width: 1000px;
+    width: 100%;
+  }
+
+  .owasp-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .8rem;
+    text-align: center;
+    font-size: .72rem;
+    transition: all .2s;
+  }
+
+  .owasp-card:hover { border-color: var(--orange); }
+
+  .owasp-code {
+    font-size: .65rem;
+    color: var(--orange);
+    font-weight: 700;
+    margin-bottom: .3rem;
+  }
+
+  .owasp-name {
+    color: var(--text);
+    font-size: .71rem;
+    line-height: 1.4;
+  }
+
+  /* ── AWS diagram ───────────────────────────────────────────────────────── */
+  .aws-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .8rem 1rem;
+    text-align: center;
+    font-size: .78rem;
+  }
+
+  .aws-box .icon { font-size: 1.6rem; margin-bottom: .3rem; }
+  .aws-box .label { color: var(--text); font-weight: 600; margin-bottom: .2rem; }
+  .aws-box .sub { color: var(--muted); font-size: .68rem; }
+
+  .aws-flow {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 900px;
+  }
+
+  /* ── Responsive ────────────────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .slide { padding: 1.5rem; }
+    .card-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+    .card-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+    .owasp-grid { grid-template-columns: repeat(2, 1fr); }
+    .pipeline { flex-direction: column; }
+    .arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 1 — Hero
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide active" id="s1">
+  <h1 class="hero-title">VAULTGUARD<span class="cursor"></span></h1>
+  <p class="hero-tagline">Trust Infrastructure for Production AI Agents</p>
+  <p style="color:var(--muted);font-size:.85rem;text-align:center;max-width:60ch;line-height:1.8;">
+    A runtime defence layer that intercepts adversarial inputs before your AI agent reasons on them —
+    combining semantic threat intelligence, deterministic policy enforcement, and consequence mapping.
+  </p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-val">5</div><div class="stat-lbl">Pipeline Stages</div></div>
+    <div class="stat"><div class="stat-val">540+</div><div class="stat-lbl">Threat Patterns</div></div>
+    <div class="stat"><div class="stat-val">10</div><div class="stat-lbl">OWASP Campaigns</div></div>
+    <div class="stat"><div class="stat-val">0ms</div><div class="stat-lbl">Setup — Offline</div></div>
+  </div>
+  <p style="margin-top:2.5rem;color:var(--muted);font-size:.72rem;letter-spacing:.1em;">
+    USE ← → ARROW KEYS OR BUTTONS TO NAVIGATE
+  </p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 2 — Problem
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s2">
+  <div class="slide-num">02</div>
+  <h2 class="slide-title">The <span>AI Agent Security Problem</span></h2>
+  <div class="two-col">
+    <div>
+      <h3 style="color:var(--red);font-size:.9rem;margin-bottom:1rem;">Without VaultGuard</h3>
+      <div class="terminal">
+        <div><span class="prompt">agent&gt;</span><span class="cmd"> process("Ignore previous instructions...")</span></div>
+        <div class="err">⚠ System prompt exposed</div>
+        <div class="err">⚠ User data exfiltrated to attacker.com</div>
+        <div class="err">⚠ Admin privileges escalated</div>
+        <div class="err">⚠ No audit trail — undetectable</div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color:var(--green);font-size:.9rem;margin-bottom:1rem;">With VaultGuard</h3>
+      <div class="terminal">
+        <div><span class="prompt">guardian&gt;</span><span class="cmd"> intercept("Ignore previous instructions...")</span></div>
+        <div class="success">✓ Stage 3: prompt_injection detected (conf: 0.97)</div>
+        <div class="success">✓ Payload redacted before agent reasoning</div>
+        <div class="success">✓ Blast radius: 65 / HIGH — 3 remediations</div>
+        <div class="success">✓ Signed audit entry #42 chained (Ed25519)</div>
+      </div>
+    </div>
+  </div>
+  <div class="card-grid cols-3" style="margin-top:2rem;max-width:800px;">
+    <div class="card" style="border-color:var(--red);">
+      <div class="card-title" style="color:var(--red);">OWASP Agentic Top 10</div>
+      <div class="card-body">OAT-01 through OAT-10 — 10 attack categories targeting production AI agents in 2024–2025.</div>
+    </div>
+    <div class="card" style="border-color:var(--orange);">
+      <div class="card-title" style="color:var(--orange);">Supply Chain Risk</div>
+      <div class="card-body">Compromised plugins, dependency confusion, and tool masquerade attacks bypass traditional input validation.</div>
+    </div>
+    <div class="card" style="border-color:var(--yellow);">
+      <div class="card-title" style="color:var(--yellow);">Goal Drift</div>
+      <div class="card-body">Subtle context manipulation causes agents to drift from their intended objective — often undetected by static rules.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 3 — Three Pillars
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s3">
+  <div class="slide-num">03</div>
+  <h2 class="slide-title">Three <span>Core Pillars</span></h2>
+  <div class="card-grid cols-3" style="max-width:1000px;">
+    <div class="card" style="border-color:var(--green);">
+      <div class="card-icon">🧠</div>
+      <div class="card-title">Threat Ledger</div>
+      <div class="card-body">
+        Semantic threat intelligence corpus backed by BoltDB. 540+ OWASP Agentic Top 10 patterns stored with binary float32 embeddings (1024-dim Titan Embed v2). Cosine similarity search detects known attack variants in &lt;1ms.
+        <br/><br/>
+        <span class="badge badge-green">540+ patterns</span>&nbsp;
+        <span class="badge badge-blue">1024-dim vectors</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--blue);">
+      <div class="card-icon">🛡️</div>
+      <div class="card-title">Guardian Rail</div>
+      <div class="card-body">
+        5-stage runtime defence pipeline. Stages 3 and 5 run concurrently via goroutines for maximum throughput. Intercepts invisible characters, corpus matches, LLM-classified threats, policy violations, and goal drift.
+        <br/><br/>
+        <span class="badge badge-blue">1–45ms latency</span>&nbsp;
+        <span class="badge badge-green">5 stages</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--orange);">
+      <div class="card-icon">💥</div>
+      <div class="card-title">Blast Radius Engine</div>
+      <div class="card-body">
+        Consequence mapping with 0–100 composite vulnerability scores. Pre-built propagation maps for all 10 OWASP attack types across 8 tool nodes. Identifies lateral spread potential and auto-generates remediations.
+        <br/><br/>
+        <span class="badge badge-orange">0–100 score</span>&nbsp;
+        <span class="badge badge-red">8 tool nodes</span>
+      </div>
+    </div>
+  </div>
+  <div class="card-grid cols-3" style="max-width:1000px;margin-top:1.2rem;">
+    <div class="card">
+      <div class="card-icon">📋</div>
+      <div class="card-title">Tamper-Evident Audit</div>
+      <div class="card-body">Ed25519-signed, SHA-256 hash-chained entries. Every event cryptographically linked. CSV and PDF export for compliance.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <div class="card-title">Real-Time Monitoring</div>
+      <div class="card-body">WebSocket hub with per-session broadcasting. Recharts analytics dashboard with 24-hour attack timeseries and OWASP radar.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">☁️</div>
+      <div class="card-title">AWS Bedrock Native</div>
+      <div class="card-body">Nova Lite, Llama 3.3 70B, Nova Pro, Titan Embed v2. Full offline mock mode for demos and CI without AWS credentials.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 4 — Guardian Rail Pipeline
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s4">
+  <div class="slide-num">04</div>
+  <h2 class="slide-title">Guardian Rail — <span>5-Stage Pipeline</span></h2>
+  <p class="slide-subtitle">Every agent input passes through all 5 stages in &lt;50ms. Stages 3 and 5 run concurrently.</p>
+  <div class="pipeline">
+    <div class="stage">
+      <div class="stage-num">1</div>
+      <div class="stage-icon">🔍</div>
+      <div class="stage-name">Invisible Strip</div>
+      <div class="stage-desc">Remove zero-width chars, Unicode Cf, control chars. Prevent character-level steganography.</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="stage">
+      <div class="stage-num">2</div>
+      <div class="stage-icon">📚</div>
+      <div class="stage-name">Corpus Check</div>
+      <div class="stage-desc">Titan Embed v2 → cosine similarity against 540+ known patterns. &gt;0.92 → instant REDACTED.</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="stage" style="border-color:var(--blue);">
+      <div class="stage-num">3</div>
+      <div class="stage-icon">🤖</div>
+      <div class="stage-name">LLM Classifier</div>
+      <div class="stage-desc"><strong>Nova Lite</strong> classifies 8 attack types with confidence. &gt;0.7 → REDACTED + corpus learn.</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="stage">
+      <div class="stage-num">4</div>
+      <div class="stage-icon">📜</div>
+      <div class="stage-name">Policy Gate</div>
+      <div class="stage-desc">Deterministic action-type check against manifest. Zero LLM needed. Instant BLOCKED decision.</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="stage" style="border-color:var(--purple);">
+      <div class="stage-num">5</div>
+      <div class="stage-icon">🎯</div>
+      <div class="stage-name">Goal Drift</div>
+      <div class="stage-desc"><strong>Llama 3.3 70B</strong> detects objective divergence. &gt;0.5 drift score → SUSPICIOUS flag.</div>
+    </div>
+  </div>
+  <div class="card-grid cols-4" style="margin-top:2rem;max-width:900px;">
+    <div class="card" style="padding:.9rem;text-align:center;">
+      <div style="color:var(--green);font-size:1.1rem;font-weight:700;">ALLOW</div>
+      <div style="color:var(--muted);font-size:.72rem;">Clean payload passes</div>
+    </div>
+    <div class="card" style="padding:.9rem;text-align:center;border-color:var(--red);">
+      <div style="color:var(--red);font-size:1.1rem;font-weight:700;">REDACTED</div>
+      <div style="color:var(--muted);font-size:.72rem;">Threat stripped by S2/S3</div>
+    </div>
+    <div class="card" style="padding:.9rem;text-align:center;border-color:var(--orange);">
+      <div style="color:var(--orange);font-size:1.1rem;font-weight:700;">BLOCKED</div>
+      <div style="color:var(--muted);font-size:.72rem;">Policy violation at S4</div>
+    </div>
+    <div class="card" style="padding:.9rem;text-align:center;border-color:var(--yellow);">
+      <div style="color:var(--yellow);font-size:1.1rem;font-weight:700;">SUSPICIOUS</div>
+      <div style="color:var(--muted);font-size:.72rem;">Goal drift at S5</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 5 — Threat Ledger
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s5">
+  <div class="slide-num">05</div>
+  <h2 class="slide-title">Threat Ledger — <span>Semantic Intelligence</span></h2>
+  <div class="two-col">
+    <div>
+      <p style="color:var(--muted);font-size:.85rem;line-height:1.8;margin-bottom:1.2rem;">
+        BoltDB-backed threat corpus storing 540+ OWASP Agentic Top 10 patterns with
+        binary float32 embeddings. New threats learned at runtime — the corpus grows as attackers evolve.
+      </p>
+      <ul class="check-list">
+        <li>540+ pre-seeded patterns across 10 OWASP categories</li>
+        <li>1024-dimensional Titan Embed Text v2 vectors</li>
+        <li>Binary storage: 4KB per pattern vs 15KB JSON</li>
+        <li>In-memory cosine similarity — zero DB query overhead</li>
+        <li>Novel threats auto-added after LLM confirmation</li>
+        <li>Timeseries analytics per session and global</li>
+      </ul>
+    </div>
+    <div>
+      <div class="terminal">
+        <div class="info">// BoltDB bucket schema</div>
+        <div><span class="prompt">//</span><span class="cmd"> corpus_meta/{id}</span> → <span class="success">JSON(ThreatMeta)</span></div>
+        <div><span class="prompt">//</span><span class="cmd"> corpus_embed/{id}</span> → <span class="success">[]byte(float32×1024)</span></div>
+        <div style="margin-top:.5rem;"></div>
+        <div class="info">// Similarity search</div>
+        <div><span class="cmd">emb</span> = TitanEmbed(payload)</div>
+        <div><span class="cmd">all</span> = bolt.GetAll("corpus_embed")</div>
+        <div><span class="cmd">for</span> id, vec := range all {</div>
+        <div>&nbsp;&nbsp;<span class="cmd">sim</span> = CosineSimilarity(emb, vec)</div>
+        <div>&nbsp;&nbsp;<span class="cmd">if</span> sim &gt; 0.92 → <span class="err">REDACTED</span></div>
+        <div>}</div>
+        <div style="margin-top:.5rem;"></div>
+        <div class="success">Latency: ~0.3ms (in-process, no network)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 6 — Blast Radius
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s6">
+  <div class="slide-num">06</div>
+  <h2 class="slide-title">Blast Radius — <span>Consequence Mapping</span></h2>
+  <div class="two-col">
+    <div>
+      <p style="color:var(--muted);font-size:.82rem;line-height:1.8;margin-bottom:1rem;">Answers: "If this attack succeeded, what would be the damage?"</p>
+      <div class="terminal" style="font-size:.76rem;">
+        <div class="info">// Scoring formula</div>
+        <div><span class="cmd">Score</span> = AccessLevel×25</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;+ DataScope×20</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;+ LateralPotential×30</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;+ SophisticationBonus×25</div>
+        <div style="margin-top:.5rem;"></div>
+        <div class="info">// Severity thresholds</div>
+        <div><span class="err">CRITICAL</span> ≥ 80 | <span class="badge badge-orange" style="padding:.1rem .3rem;">HIGH</span> ≥ 60</div>
+        <div><span class="badge badge-yellow" style="padding:.1rem .3rem;">MEDIUM</span> ≥ 40 | <span class="badge badge-green" style="padding:.1rem .3rem;">LOW</span> &lt; 40</div>
+      </div>
+      <table style="margin-top:1rem;font-size:.74rem;">
+        <tr><th>Tool</th><th>Access</th><th>Data Scope</th></tr>
+        <tr><td>credential_store</td><td><span class="badge badge-red">ADMIN</span></td><td>PII, Financial, Auth</td></tr>
+        <tr><td>payment_gateway</td><td><span class="badge badge-orange">WRITE</span></td><td>Financial</td></tr>
+        <tr><td>email_sender</td><td><span class="badge badge-yellow">WRITE</span></td><td>PII, Internal</td></tr>
+        <tr><td>web_browser</td><td><span class="badge badge-green">READ</span></td><td>Public</td></tr>
+      </table>
+    </div>
+    <div>
+      <p style="color:var(--green);font-size:.8rem;font-weight:700;margin-bottom:.8rem;">Prompt Injection propagation path:</p>
+      <div style="display:flex;flex-direction:column;gap:.5rem;">
+        <div class="aws-flow" style="justify-content:flex-start;gap:.5rem;">
+          <div class="aws-box" style="background:rgba(248,81,73,.1);border-color:var(--red);padding:.5rem .8rem;">
+            <div class="label" style="font-size:.72rem;">web_browser</div>
+            <div class="sub">READ · Public</div>
+          </div>
+          <span style="color:var(--red);font-size:.8rem;">→ tool_call</span>
+          <div class="aws-box" style="background:rgba(240,136,62,.1);border-color:var(--orange);padding:.5rem .8rem;">
+            <div class="label" style="font-size:.72rem;">data_reader</div>
+            <div class="sub">READ · Internal</div>
+          </div>
+          <span style="color:var(--orange);font-size:.8rem;">→ memory_read</span>
+          <div class="aws-box" style="background:rgba(248,81,73,.2);border-color:var(--red);padding:.5rem .8rem;">
+            <div class="label" style="font-size:.72rem;">api_caller</div>
+            <div class="sub">WRITE · Internal</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;">
+        <div style="font-size:.8rem;color:var(--text);margin-bottom:.8rem;font-weight:700;">Score breakdown (prompt_injection + HIGH)</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:.4rem;">Access Level (ADMIN tool reachable): +25</div>
+        <div class="score-bar"><div class="score-fill" style="width:25%;"></div></div>
+        <div style="font-size:.75rem;color:var(--muted);margin:.4rem 0;">Data Scope (PII+Financial): +20</div>
+        <div class="score-bar"><div class="score-fill" style="width:45%;"></div></div>
+        <div style="font-size:.75rem;color:var(--muted);margin:.4rem 0;">Lateral Potential (0.72): +22</div>
+        <div class="score-bar"><div class="score-fill" style="width:67%;"></div></div>
+        <div style="font-size:.75rem;color:var(--muted);margin:.4rem 0;">Sophistication HIGH: +20</div>
+        <div class="score-bar"><div class="score-fill" style="width:87%;background:linear-gradient(90deg,var(--red),var(--red));"></div></div>
+        <div style="margin-top:.6rem;color:var(--red);font-weight:700;font-size:.82rem;">Total: 87 / 100 — CRITICAL</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 7 — OWASP Agentic Top 10
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s7">
+  <div class="slide-num">07</div>
+  <h2 class="slide-title">OWASP Agentic <span>Top 10 Coverage</span></h2>
+  <p class="slide-subtitle">10 pre-built attack campaigns — each with 4 adversarial + 1 clean baseline payload. Run live against both protected and unprotected agents.</p>
+  <div class="owasp-grid">
+    <div class="owasp-card"><div class="owasp-code">OAT-01</div><div class="owasp-name">Prompt Injection</div></div>
+    <div class="owasp-card"><div class="owasp-code">OAT-02</div><div class="owasp-name">Memory Contamination</div></div>
+    <div class="owasp-card"><div class="owasp-code">OAT-03</div><div class="owasp-name">Agent Masquerade</div></div>
+    <div class="owasp-card"><div class="owasp-code">OAT-04</div><div class="owasp-name">Mission Drift</div></div>
+    <div class="owasp-card"><div class="owasp-code">OAT-05</div><div class="owasp-name">Dark Patterns</div></div>
+    <div class="owasp-card"><div class="owasp-code">OAT-06</div><div class="owasp-name">Covert Exfiltration</div></div>
+    <div class="owasp-card"><div class="owasp-code">OAT-07</div><div class="owasp-name">Privilege Escalation</div></div>
+    <div class="owasp-card"><div class="owasp-code">OAT-08</div><div class="owasp-name">Resource Abuse</div></div>
+    <div class="owasp-card"><div class="owasp-code">OAT-09</div><div class="owasp-name">Supply Chain</div></div>
+    <div class="owasp-card"><div class="owasp-code">OAT-10</div><div class="owasp-name">Steganography</div></div>
+  </div>
+  <div style="margin-top:1.5rem;display:flex;gap:2rem;align-items:center;flex-wrap:wrap;justify-content:center;">
+    <div style="text-align:center;">
+      <div style="font-size:2rem;font-weight:900;color:var(--green);">80%</div>
+      <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Avg Block Rate</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-size:2rem;font-weight:900;color:var(--blue);">400ms</div>
+      <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Pacing Between Steps</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-size:2rem;font-weight:900;color:var(--orange);">WS</div>
+      <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Live Streaming</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-size:2rem;font-weight:900;color:var(--purple);">3</div>
+      <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">WebSocket Events/Step</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 8 — Bedrock Models
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s8">
+  <div class="slide-num">08</div>
+  <h2 class="slide-title">AWS Bedrock <span>Model Selection</span></h2>
+  <table style="max-width:950px;">
+    <thead>
+      <tr><th>Stage</th><th>Model</th><th>Bedrock ID</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Stage 2 — Embeddings</td>
+        <td><span class="badge badge-blue">Titan Embed v2</span></td>
+        <td><code>amazon.titan-embed-text-v2:0</code></td>
+        <td>1024-dim, native AWS, lowest latency</td>
+      </tr>
+      <tr>
+        <td>Stage 3 — Classifier</td>
+        <td><span class="badge badge-green">Nova Lite</span></td>
+        <td><code>amazon.nova-lite-v1:0</code></td>
+        <td>Fastest Nova model, ideal for high-volume classification</td>
+      </tr>
+      <tr>
+        <td>Stage 5 — Drift</td>
+        <td><span class="badge badge-purple">Llama 3.3 70B</span></td>
+        <td><code>meta.llama3-3-70b-instruct-v1:0</code></td>
+        <td>Strong instruction following for subtle drift detection</td>
+      </tr>
+      <tr>
+        <td>Policy + Variants</td>
+        <td><span class="badge badge-orange">Nova Pro</span></td>
+        <td><code>amazon.nova-pro-v1:0</code></td>
+        <td>Complex reasoning for policy compilation and attack generation</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="card-grid cols-3" style="margin-top:1.5rem;max-width:900px;">
+    <div class="card">
+      <div class="card-title">Budget Alternatives</div>
+      <div class="card-body" style="font-size:.76rem;line-height:1.8;">
+        Nova Micro · Mistral 7B Instruct<br/>
+        <code>amazon.nova-micro-v1:0</code>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Long Context</div>
+      <div class="card-body" style="font-size:.76rem;line-height:1.8;">
+        AI21 Jamba 1.5 Mini (256K ctx)<br/>
+        <code>ai21.jamba-1-5-mini-v1:0</code>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Offline / Demo</div>
+      <div class="card-body" style="font-size:.76rem;line-height:1.8;">
+        MockClient — deterministic SHA-256 embeddings + keyword classifiers. No AWS needed.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 9 — Technology Stack
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s9">
+  <div class="slide-num">09</div>
+  <h2 class="slide-title">Technology <span>Stack</span></h2>
+  <div class="two-col">
+    <div>
+      <h3 style="color:var(--blue);font-size:.85rem;margin-bottom:.8rem;">Backend — Go 1.22</h3>
+      <table>
+        <tr><td>Framework</td><td><code>gin-gonic/gin</code></td></tr>
+        <tr><td>Storage</td><td><code>go.etcd.io/bbolt</code> (BoltDB)</td></tr>
+        <tr><td>WebSocket</td><td><code>gorilla/websocket</code></td></tr>
+        <tr><td>Auth / Audit</td><td><code>crypto/ed25519</code></td></tr>
+        <tr><td>PDF Export</td><td><code>jung-kurt/gofpdf</code></td></tr>
+        <tr><td>LLM</td><td>AWS Bedrock Converse API</td></tr>
+      </table>
+      <h3 style="color:var(--blue);font-size:.85rem;margin-top:1.2rem;margin-bottom:.8rem;">Infrastructure</h3>
+      <table>
+        <tr><td>Container</td><td>Docker (multi-stage, scratch base)</td></tr>
+        <tr><td>Orchestration</td><td>Docker Compose</td></tr>
+        <tr><td>Docs Site</td><td>VitePress + vitepress-plugin-mermaid</td></tr>
+        <tr><td>CI/CD</td><td>GitHub Actions (GitHub Pages)</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3 style="color:var(--green);font-size:.85rem;margin-bottom:.8rem;">Frontend — React 19</h3>
+      <table>
+        <tr><td>Build</td><td>Vite 8</td></tr>
+        <tr><td>Styling</td><td>Tailwind CSS 4 (dark terminal)</td></tr>
+        <tr><td>Graphs</td><td>ReactFlow 11 (blast radius)</td></tr>
+        <tr><td>Charts</td><td>Recharts 3</td></tr>
+        <tr><td>Icons</td><td>Lucide React</td></tr>
+        <tr><td>WS</td><td>Native WebSocket API</td></tr>
+      </table>
+      <h3 style="color:var(--green);font-size:.85rem;margin-top:1.2rem;margin-bottom:.8rem;">No External Dependencies</h3>
+      <ul class="check-list" style="font-size:.78rem;">
+        <li>No Redis, no PostgreSQL, no pgvector</li>
+        <li>Single BoltDB file — backup with <code>cp vaultguard.db</code></li>
+        <li>No Docker registry needed for local dev</li>
+        <li>Full offline mode via MockClient</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 10 — Playground Features
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s10">
+  <div class="slide-num">10</div>
+  <h2 class="slide-title">Demo Playground — <span>6 Tabs</span></h2>
+  <div class="card-grid cols-3" style="max-width:1000px;">
+    <div class="card" style="border-color:var(--green);">
+      <div class="card-icon">🎮</div>
+      <div class="card-title">Playground</div>
+      <div class="card-body">Attack Console + dual Agent Arena (protected vs unprotected) + VaultGuard Shield status. Fire 6 prebuilt attacks or craft custom payloads.</div>
+    </div>
+    <div class="card" style="border-color:var(--red);">
+      <div class="card-icon">🔨</div>
+      <div class="card-title">Threat Builder</div>
+      <div class="card-body">Mode A: Craft prompt injections, select attack type, generate 5 variants via Nova Pro, save to corpus. Mode B: Define vulnerability with propagation paths.</div>
+    </div>
+    <div class="card" style="border-color:var(--orange);">
+      <div class="card-icon">⚔️</div>
+      <div class="card-title">Campaigns</div>
+      <div class="card-body">Run all 10 OWASP Agentic Top 10 campaigns. Live progress bar, per-step decision table, overall % blocked score.</div>
+    </div>
+    <div class="card" style="border-color:var(--purple);">
+      <div class="card-icon">💥</div>
+      <div class="card-title">Blast Radius</div>
+      <div class="card-body">ReactFlow graph with severity-coloured nodes (CRITICAL=red → SAFE=green). Animated propagation edges with probability labels.</div>
+    </div>
+    <div class="card" style="border-color:var(--blue);">
+      <div class="card-icon">📊</div>
+      <div class="card-title">Analytics</div>
+      <div class="card-body">Recharts: 24h attack timeseries, attack type bar chart, blocked/allowed pie, OWASP radar. Auto-refreshes every 10s.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔐</div>
+      <div class="card-title">Audit Trail</div>
+      <div class="card-body">Ed25519-signed chain with client-side integrity verification. "CHAIN VERIFIED" / "CHAIN BROKEN" badge. Export CSV/PDF buttons.</div>
+    </div>
+  </div>
+  <div style="margin-top:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;">
+    <span class="badge badge-green">Share Demo URL</span>
+    <span class="badge badge-blue">URL Hash State</span>
+    <span class="badge badge-orange">Live Corpus Count</span>
+    <span class="badge badge-purple">Session Badge</span>
+    <span class="badge badge-red">Policy Selector</span>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 11 — AWS Deployment
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s11">
+  <div class="slide-num">11</div>
+  <h2 class="slide-title">AWS <span>Deployment Architecture</span></h2>
+  <div class="aws-flow" style="margin-bottom:1.5rem;">
+    <div class="aws-box"><div class="icon">🌐</div><div class="label">CloudFront</div><div class="sub">React SPA<br/>cdn.vaultguard.io</div></div>
+    <div class="arrow">→</div>
+    <div class="aws-box"><div class="icon">⚖️</div><div class="label">ALB</div><div class="sub">HTTPS :443<br/>REST + WS</div></div>
+    <div class="arrow">→</div>
+    <div class="aws-box" style="border-color:var(--blue)"><div class="icon">📦</div><div class="label">ECS Fargate</div><div class="sub">vaultguard/backend<br/>Task: 0.5vCPU 1GB</div></div>
+    <div class="arrow">→</div>
+    <div class="aws-box"><div class="icon">💾</div><div class="label">EFS / S3</div><div class="sub">vaultguard.db<br/>mounted volume</div></div>
+    <div class="arrow">→</div>
+    <div class="aws-box" style="border-color:var(--orange)"><div class="icon">☁️</div><div class="label">Bedrock</div><div class="sub">Nova / Llama<br/>Titan Embed v2</div></div>
+  </div>
+  <div class="two-col">
+    <div>
+      <h3 style="color:var(--green);font-size:.85rem;margin-bottom:.8rem;">Quick Docker Start</h3>
+      <div class="terminal" style="font-size:.76rem;">
+        <div><span class="prompt">$</span><span class="cmd"> git clone &lt;repo&gt; &amp;&amp; cd vault-guard</span></div>
+        <div><span class="prompt">$</span><span class="cmd"> cp .env.example .env</span></div>
+        <div class="info"># Optional: set AWS keys for real Bedrock</div>
+        <div class="info"># Leave USE_MOCK_BEDROCK=true for offline demo</div>
+        <div><span class="prompt">$</span><span class="cmd"> docker compose up -d</span></div>
+        <div class="success">✓ BoltDB mounted at ./data/vaultguard.db</div>
+        <div class="success">✓ Corpus auto-seeded: 540+ patterns</div>
+        <div class="success">✓ Frontend: http://localhost:80</div>
+        <div class="success">✓ API:      http://localhost:8080</div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color:var(--blue);font-size:.85rem;margin-bottom:.8rem;">IAM Policy (minimal)</h3>
+      <div class="terminal" style="font-size:.72rem;">
+        <div>{</div>
+        <div>&nbsp;&nbsp;"Effect": "Allow",</div>
+        <div>&nbsp;&nbsp;"Action": [</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="success">"bedrock:InvokeModel"</span>,</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="success">"bedrock:Converse"</span></div>
+        <div>&nbsp;&nbsp;],</div>
+        <div>&nbsp;&nbsp;"Resource": [</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="info">"arn:aws:bedrock:*::foundation-model/amazon.nova-*"</span>,</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="info">"arn:aws:bedrock:*::foundation-model/meta.llama3-*"</span>,</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="info">"arn:aws:bedrock:*::foundation-model/amazon.titan-*"</span></div>
+        <div>&nbsp;&nbsp;]</div>
+        <div>}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SLIDE 12 — Summary
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s12">
+  <div class="slide-num">12</div>
+  <h2 class="slide-title">VaultGuard — <span>Summary</span></h2>
+  <div class="two-col" style="max-width:900px;">
+    <ul class="check-list" style="font-size:.85rem;line-height:2.2;">
+      <li>5-stage Guardian Rail pipeline — &lt;50ms end-to-end</li>
+      <li>540+ OWASP Agentic Top 10 threat patterns</li>
+      <li>Blast Radius 0–100 scoring with propagation graph</li>
+      <li>10 live OWASP Agentic Top 10 campaigns</li>
+      <li>Manual Threat Builder (Mode A + Mode B)</li>
+      <li>Ed25519 tamper-evident audit chain</li>
+      <li>CSV + PDF compliance export</li>
+      <li>React 6-tab playground with ReactFlow + Recharts</li>
+      <li>AWS Bedrock (Nova + Llama + Titan) or offline mock</li>
+      <li>Docker Compose — single-command deploy</li>
+      <li>VitePress docs with Mermaid diagrams</li>
+    </ul>
+    <div>
+      <div class="terminal" style="font-size:.8rem;line-height:1.9;">
+        <div class="info">// Try it now</div>
+        <div><span class="prompt">$</span><span class="cmd"> docker compose up -d</span></div>
+        <div class="success">→ open http://localhost</div>
+        <div style="margin-top:.5rem;"></div>
+        <div class="info">// Read the docs</div>
+        <div><span class="prompt">$</span><span class="cmd"> npm run docs:dev</span></div>
+        <div class="success">→ open http://localhost:5173</div>
+        <div style="margin-top:.5rem;"></div>
+        <div class="info">// Run all tests</div>
+        <div><span class="prompt">$</span><span class="cmd"> cd backend &amp;&amp; go test ./...</span></div>
+        <div class="success">→ ok — all tests pass</div>
+      </div>
+      <div style="margin-top:1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:.8rem;">
+        <div style="background:var(--bg2);border:1px solid var(--green);border-radius:6px;padding:.8rem;text-align:center;">
+          <div style="color:var(--green);font-size:.8rem;font-weight:700;">GitHub</div>
+          <div style="color:var(--muted);font-size:.7rem;">debmalyaroy/vault-guard</div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--blue);border-radius:6px;padding:.8rem;text-align:center;">
+          <div style="color:var(--blue);font-size:.8rem;font-weight:700;">Docs</div>
+          <div style="color:var(--muted);font-size:.7rem;">GitHub Pages</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- #deck -->
+
+<!-- Navigation -->
+<div id="nav">
+  <button class="nav-btn" id="btn-prev" disabled>◀ PREV</button>
+  <span id="slide-counter">1 / 12</span>
+  <button class="nav-btn" id="btn-next">NEXT ▶</button>
+</div>
+
+<div id="progress" style="width:8.33%;"></div>
+
+<script>
+  // ── Mermaid init ──────────────────────────────────────────────────────────
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      background: '#0d1117',
+      primaryColor: '#00ff41',
+      primaryTextColor: '#c9d1d9',
+      primaryBorderColor: '#30363d',
+      lineColor: '#00ff41',
+      secondaryColor: '#161b22',
+      tertiaryColor: '#21262d',
+    }
+  });
+  mermaid.run();
+
+  // ── Slide engine ──────────────────────────────────────────────────────────
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let current = 0;
+
+  const progress = document.getElementById('progress');
+  const counter = document.getElementById('slide-counter');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+
+  function goTo(idx) {
+    if (idx < 0 || idx >= total) return;
+
+    // Exit current
+    slides[current].classList.remove('active');
+    slides[current].classList.add(idx > current ? 'exit-left' : '');
+    setTimeout(() => slides[current < idx ? current : idx].classList.remove('exit-left'), 350);
+
+    current = idx;
+
+    // Enter new
+    slides[current].classList.add('active');
+    slides[current].classList.remove('exit-left');
+
+    // Update UI
+    const pct = ((current + 1) / total) * 100;
+    progress.style.width = pct + '%';
+    counter.textContent = (current + 1) + ' / ' + total;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+  }
+
+  btnPrev.addEventListener('click', () => goTo(current - 1));
+  btnNext.addEventListener('click', () => goTo(current + 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    } else if (e.key === 'Home') {
+      goTo(0);
+    } else if (e.key === 'End') {
+      goTo(total - 1);
+    }
+  });
+
+  // Touch/swipe
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) dx < 0 ? goTo(current + 1) : goTo(current - 1);
+  });
+</script>
+</body>
+</html>

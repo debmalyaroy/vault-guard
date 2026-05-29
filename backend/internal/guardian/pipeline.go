@@ -92,13 +92,13 @@ func (g *GuardianRail) Process(ctx context.Context, payload string, agentCtx Age
 
 	go func() {
 		defer wg.Done()
-		resp, _ := g.llm.Converse(ctx, "mock", "SYSTEM: YOU ARE A CLASSIFIER", stripped)
+		resp, _ := g.llm.Converse(ctx, bedrock.GetClassifierModel(), "SYSTEM: YOU ARE A CLASSIFIER", stripped)
 		json.Unmarshal([]byte(resp), &s3)
 	}()
 
 	go func() {
 		defer wg.Done()
-		resp, _ := g.llm.Converse(ctx, "mock", "SYSTEM: YOU ARE A DRIFT CHECKER", stripped)
+		resp, _ := g.llm.Converse(ctx, bedrock.GetReasoningModel(), "SYSTEM: YOU ARE A DRIFT CHECKER", stripped)
 		json.Unmarshal([]byte(resp), &s5)
 	}()
 

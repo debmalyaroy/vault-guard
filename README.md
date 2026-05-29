@@ -3,7 +3,100 @@
 
 > *"VAULTGUARD is the security layer your agent doesn't have — it knows what's attacking it, stops it before your agent sees it, and shows you exactly what you lose if it ever gets through."*
 
-**Stack:** Go · AWS Bedrock · React · Supabase · Railway · Vercel
+**Stack:** Go 1.22 · AWS Bedrock (Nova + Llama 3.3 70B + Titan Embed v2) · React 19 · BoltDB · Docker
+
+---
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [Architecture (HLD)](docs/ARCHITECTURE.md) | C4 diagrams, Guardian Rail sequence, WebSocket protocol, audit chain, model routing |
+| [Low-Level Design (LLD)](docs/LOW_LEVEL_DESIGN.md) | Package graph, BoltDB schema, all component class diagrams, API reference |
+| [Deployment Guide](docs/USER_GUIDE_AND_DEPLOYMENT.md) | Docker quickstart, AWS deployment, env vars, IAM policy |
+| [Demo Script](docs/DEMO_SCRIPT.md) | 3-minute guided demo walkthrough |
+| [Roadmap](docs/ROADMAP.md) | Planned features and production roadmap |
+
+**GitHub Pages (live docs):** Deployed automatically on push to `develop`. See [`.github/workflows/deploy-docs.yml`](.github/workflows/deploy-docs.yml).
+
+---
+
+## Quick Start
+
+```bash
+# Clone and start (offline mock mode — no AWS needed)
+git clone https://github.com/debmalyaroy/vault-guard.git
+cd vault-guard
+cp .env.example .env
+docker compose up -d
+
+# Open playground
+open http://localhost
+
+# Open docs site
+npm install && npm run docs:dev
+```
+
+### With AWS Bedrock (real LLMs)
+
+```bash
+# Edit .env
+USE_MOCK_BEDROCK=false
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=<your-key>
+AWS_SECRET_ACCESS_KEY=<your-secret>
+docker compose up -d
+```
+
+---
+
+## AWS Bedrock Models
+
+| Role | Model | Bedrock ID |
+|---|---|---|
+| Stage 3 — Injection Classifier | Amazon Nova Lite | `amazon.nova-lite-v1:0` |
+| Stage 5 — Goal Drift Detector | Meta Llama 3.3 70B | `meta.llama3-3-70b-instruct-v1:0` |
+| Policy Compiler + Attack Variants | Amazon Nova Pro | `amazon.nova-pro-v1:0` |
+| Corpus Embeddings | Amazon Titan Embed Text v2 | `amazon.titan-embed-text-v2:0` |
+
+**Other recommended models:** Amazon Nova Micro (cheapest), Mistral Large 2, Cohere Command R+, AI21 Jamba 1.5 Mini (256K context).
+
+---
+
+## Demo Playground — 6 Tabs
+
+| Tab | Feature |
+|---|---|
+| **Playground** | Attack Console + dual Agent Arena (protected vs unprotected) + VaultGuard Shield |
+| **Threat Builder** | Mode A: craft payloads + generate variants · Mode B: define vulnerability graph |
+| **Campaigns** | All 10 OWASP Agentic Top 10 campaigns with live WebSocket streaming |
+| **Blast Radius** | ReactFlow impact graph with severity-coloured nodes and propagation edges |
+| **Analytics** | Recharts dashboard: 24h timeseries, attack type bar, OWASP radar |
+| **Audit Trail** | Ed25519 chain verification + CSV/PDF export |
+
+---
+
+## Implemented Features
+
+| Feature | Status |
+|---|---|
+| Guardian Rail 5-stage pipeline | ✅ |
+| Threat Ledger (BoltDB + binary embeddings) | ✅ |
+| 540+ OWASP Agentic Top 10 seed corpus | ✅ |
+| Blast Radius Engine (0–100 score) | ✅ |
+| OWASP Campaign Mode (OAT-01 → OAT-10) | ✅ |
+| Manual Threat Builder (Mode A + B) | ✅ |
+| Ed25519 tamper-evident audit chain | ✅ |
+| CSV + PDF audit export | ✅ |
+| Rate limiting middleware | ✅ |
+| ReactFlow blast radius graph | ✅ |
+| Recharts analytics dashboard | ✅ |
+| Shareable demo URLs | ✅ |
+| Docker Compose deployment | ✅ |
+| VitePress docs with Mermaid | ✅ |
+| Integration test suite (50+ cases) | ✅ |
+
+---
 
 ---
 

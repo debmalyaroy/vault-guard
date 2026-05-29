@@ -1,0 +1,12 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shield outer -->
+  <path d="M60 8L12 28V60C12 84 34 100 60 112C86 100 108 84 108 60V28L60 8Z" fill="#0d1117" stroke="#00ff41" stroke-width="2"/>
+  <!-- Shield inner glow -->
+  <path d="M60 20L24 36V60C24 78 40 92 60 102C80 92 96 78 96 60V36L60 20Z" fill="#00ff4108" stroke="#00ff4140" stroke-width="1"/>
+  <!-- VG letters -->
+  <text x="60" y="72" text-anchor="middle" font-family="monospace" font-size="32" font-weight="bold" fill="#00ff41">VG</text>
+  <!-- Dots decoration -->
+  <circle cx="60" cy="88" r="3" fill="#00ff41" opacity="0.6"/>
+  <circle cx="48" cy="85" r="2" fill="#00ff41" opacity="0.4"/>
+  <circle cx="72" cy="85" r="2" fill="#00ff41" opacity="0.4"/>
+</svg>

@@ -1,8 +1,13 @@
-name: Deploy Docs
+name: Deploy VaultGuard Docs to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
+    paths:
+      - 'docs/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:
 
 permissions:
@@ -22,21 +27,28 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup Node
+
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+          node-version: '20'
+          cache: 'npm'
+
       - name: Install dependencies
-        run: cd docs-site && npm ci
-      - name: Build with VitePress
-        run: cd docs-site && npm run docs:build
+        run: npm ci
+
+      - name: Build VitePress docs
+        run: npm run docs:build
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs-site/.vitepress/dist
+          path: docs/.vitepress/dist
 
   deploy:
     environment:

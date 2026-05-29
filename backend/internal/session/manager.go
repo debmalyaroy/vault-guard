@@ -6,28 +6,32 @@ import (
 	"github.com/vaultguard/backend/internal/store"
 )
 
+// Session holds the state for one playground session.
 type Session struct {
-	ID                string    `json:"id"`
-	SessionToken      string    `json:"session_token"`
-	ActivePolicy      string    `json:"active_policy"`
-	TaskText          string    `json:"task_text"`
-	TaskAnchorEmb     []float32 `json:"task_anchor_emb"`
-	CreatedAt         time.Time `json:"created_at"`
-	LastActive        time.Time `json:"last_active"`
+	ID            string    `json:"id"`
+	SessionToken  string    `json:"session_token"`
+	ActivePolicy  string    `json:"active_policy"`
+	TaskText      string    `json:"task_text"`
+	TaskAnchorEmb []float32 `json:"task_anchor_emb"`
+	CreatedAt     time.Time `json:"created_at"`
+	LastActive    time.Time `json:"last_active"`
 }
 
+// Manager handles session lifecycle backed by BoltDB.
 type Manager struct {
-	store *store.Store[Session]
+	store *store.BoltStore[Session]
 }
 
-func NewManager(filePath string) (*Manager, error) {
-	s, err := store.NewStore[Session](filePath)
+// NewManager creates a session Manager backed by BoltDB.
+func NewManager(db *store.DB) (*Manager, error) {
+	s, err := store.NewBoltStore[Session](db, "sessions")
 	if err != nil {
 		return nil, err
 	}
 	return &Manager{store: s}, nil
 }
 
+// CreateSession initialises a new session with default policy and demo task.
 func (m *Manager) CreateSession(id, token string) (*Session, error) {
 	sess := Session{
 		ID:           id,
@@ -37,30 +41,40 @@ func (m *Manager) CreateSession(id, token string) (*Session, error) {
 		CreatedAt:    time.Now(),
 		LastActive:   time.Now(),
 	}
-
-	err := m.store.Set(id, sess)
-	if err != nil {
+	if err := m.store.Set(id, sess); err != nil {
 		return nil, err
 	}
 	return &sess, nil
 }
 
+// GetSession retrieves a session and updates its last-active timestamp.
 func (m *Manager) GetSession(id string) (*Session, bool) {
 	sess, ok := m.store.Get(id)
-	if ok {
-		sess.LastActive = time.Now()
-		_ = m.store.Set(id, sess)
-		return &sess, true
+	if !ok {
+		return nil, false
 	}
-	return nil, false
+	sess.LastActive = time.Now()
+	_ = m.store.Set(id, sess)
+	return &sess, true
 }
 
+// UpdatePolicy sets the active policy for a session.
 func (m *Manager) UpdatePolicy(id, policy string) error {
 	sess, ok := m.store.Get(id)
-	if ok {
-		sess.ActivePolicy = policy
-		sess.LastActive = time.Now()
-		return m.store.Set(id, sess)
+	if !ok {
+		return nil
 	}
-	return nil
+	sess.ActivePolicy = policy
+	sess.LastActive = time.Now()
+	return m.store.Set(id, sess)
+}
+
+// SetTaskAnchor stores the task embedding used for goal-drift detection.
+func (m *Manager) SetTaskAnchor(id string, emb []float32) error {
+	sess, ok := m.store.Get(id)
+	if !ok {
+		return nil
+	}
+	sess.TaskAnchorEmb = emb
+	return m.store.Set(id, sess)
 }

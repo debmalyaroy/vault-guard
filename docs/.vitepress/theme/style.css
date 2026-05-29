@@ -1,0 +1,253 @@
+/* VaultGuard Documentation — Hacker Terminal Dark Theme */
+
+:root {
+  --vp-c-brand-1: #00ff41;
+  --vp-c-brand-2: #00cc33;
+  --vp-c-brand-3: #009922;
+  --vp-c-brand-soft: rgba(0, 255, 65, 0.12);
+
+  --vp-c-text-1: #e2e8f0;
+  --vp-c-text-2: #94a3b8;
+  --vp-c-text-3: #64748b;
+
+  --vp-font-family-base: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  --vp-font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+.dark {
+  --vp-c-bg: #0a0e17;
+  --vp-c-bg-alt: #0d1117;
+  --vp-c-bg-elv: #161b22;
+  --vp-c-bg-soft: #161b22;
+
+  --vp-c-border: #30363d;
+  --vp-c-divider: #21262d;
+
+  --vp-c-text-1: #e2e8f0;
+  --vp-c-text-2: #94a3b8;
+  --vp-c-text-3: #64748b;
+
+  --vp-c-brand-1: #00ff41;
+  --vp-c-brand-2: #00cc33;
+  --vp-c-brand-soft: rgba(0, 255, 65, 0.10);
+
+  --vp-code-bg: #161b22;
+  --vp-code-color: #58a6ff;
+
+  --vp-sidebar-bg-color: #0d1117;
+  --vp-nav-bg-color: rgba(10, 14, 23, 0.90);
+}
+
+/* Force dark mode by default */
+html {
+  color-scheme: dark;
+}
+
+/* Navigation */
+.VPNav {
+  border-bottom: 1px solid #00ff4125 !important;
+  background: rgba(10, 14, 23, 0.95) !important;
+  backdrop-filter: blur(8px);
+}
+
+.VPNavBarTitle .title {
+  color: #00ff41 !important;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-family: var(--vp-font-family-mono);
+}
+
+/* Sidebar */
+.VPSidebar {
+  background: #0d1117 !important;
+  border-right: 1px solid #21262d !important;
+}
+
+.VPSidebarItem.is-active > .item .link .text {
+  color: #00ff41 !important;
+}
+
+/* Home hero */
+.VPHero .name {
+  background: linear-gradient(135deg, #00ff41, #00cc33, #58a6ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.VPHero .tagline {
+  color: #94a3b8 !important;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.95rem;
+}
+
+.VPButton.medium.brand {
+  background: #00ff41 !important;
+  color: #0a0e17 !important;
+  border: none !important;
+  font-weight: 700;
+}
+
+.VPButton.medium.brand:hover {
+  background: #00cc33 !important;
+}
+
+.VPButton.medium.alt {
+  border: 1px solid #00ff4150 !important;
+  color: #00ff41 !important;
+}
+
+/* Feature cards */
+.VPFeature {
+  background: #0d1117 !important;
+  border: 1px solid #21262d !important;
+  transition: border-color 0.2s ease;
+}
+
+.VPFeature:hover {
+  border-color: #00ff4150 !important;
+}
+
+.VPFeature .title {
+  color: #e2e8f0 !important;
+}
+
+.VPFeature .details {
+  color: #94a3b8 !important;
+}
+
+/* Code blocks */
+div[class*="language-"] {
+  background: #0d1117 !important;
+  border: 1px solid #21262d;
+  border-radius: 6px;
+}
+
+.vp-code-group .tabs {
+  background: #161b22 !important;
+}
+
+/* Headings */
+h1, h2, h3 {
+  font-family: var(--vp-font-family-mono) !important;
+}
+
+h2 {
+  border-top: 1px solid #21262d !important;
+}
+
+h2::before {
+  content: '## ';
+  color: #00ff4166;
+}
+
+h3::before {
+  content: '### ';
+  color: #00ff4144;
+}
+
+/* Tables */
+.vp-doc table {
+  border-collapse: collapse;
+}
+
+.vp-doc tr {
+  border-top: 1px solid #21262d;
+  background: transparent;
+}
+
+.vp-doc tr:nth-child(2n) {
+  background: #0d1117;
+}
+
+.vp-doc th {
+  background: #161b22 !important;
+  color: #00ff41 !important;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Mermaid diagrams */
+.mermaid {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow: auto;
+}
+
+/* Inline code */
+.vp-doc :not(pre) > code {
+  background: #161b22 !important;
+  color: #58a6ff !important;
+  border: 1px solid #30363d;
+  border-radius: 3px;
+}
+
+/* Blockquotes */
+.vp-doc blockquote {
+  border-left: 4px solid #00ff41;
+  background: #0d1117;
+  color: #94a3b8;
+}
+
+/* Custom containers */
+.custom-block.tip {
+  border-color: #00ff41;
+  background: rgba(0, 255, 65, 0.06);
+}
+
+.custom-block.warning {
+  border-color: #f5a623;
+  background: rgba(245, 166, 35, 0.06);
+}
+
+.custom-block.danger {
+  border-color: #f85149;
+  background: rgba(248, 81, 73, 0.06);
+}
+
+/* Footer */
+.VPFooter {
+  border-top: 1px solid #21262d !important;
+  background: #0d1117 !important;
+  color: #64748b !important;
+}
+
+/* Terminal-style scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ff4166;
+}
+
+/* Active link */
+.VPLink.active {
+  color: #00ff41 !important;
+}
+
+/* Pagination */
+.VPDocFooter .pager-link .title {
+  color: #00ff41;
+}
+
+/* Search */
+.VPLocalSearchBox {
+  background: #0d1117 !important;
+  border: 1px solid #30363d !important;
+}

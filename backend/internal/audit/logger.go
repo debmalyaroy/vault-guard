@@ -13,6 +13,7 @@ import (
 	"github.com/vaultguard/backend/internal/store"
 )
 
+// AuditEntry is a single tamper-evident log record.
 type AuditEntry struct {
 	ID        string         `json:"id"`
 	SessionID string         `json:"session_id"`
@@ -25,42 +26,42 @@ type AuditEntry struct {
 	CreatedAt time.Time      `json:"created_at"`
 }
 
+// Logger writes Ed25519-signed, SHA-256 hash-chained audit entries.
 type Logger struct {
-	store      *store.Store[AuditEntry]
+	store      *store.NestedStore[AuditEntry]
 	privateKey ed25519.PrivateKey
 	publicKey  ed25519.PublicKey
 	mu         sync.Mutex
-	sessionSeq map[string]int
+	sessionSeq  map[string]int
 	prevHash   map[string]string
 }
 
-func NewLogger(filePath string) (*Logger, error) {
-	s, err := store.NewStore[AuditEntry](filePath)
+// NewLogger creates an audit Logger backed by BoltDB.
+func NewLogger(db *store.DB) (*Logger, error) {
+	s, err := store.NewNestedStore[AuditEntry](db, "audit")
 	if err != nil {
 		return nil, err
 	}
-
 	pub, priv, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		return nil, err
 	}
-
 	return &Logger{
 		store:      s,
 		privateKey: priv,
 		publicKey:  pub,
-		sessionSeq: make(map[string]int),
+		sessionSeq:  make(map[string]int),
 		prevHash:   make(map[string]string),
 	}, nil
 }
 
-func sha256Hex(s string) string {
-	h := sha256.New()
-	h.Write([]byte(s))
-	return hex.EncodeToString(h.Sum(nil))
+// PublicKeyHex returns the hex-encoded Ed25519 public key for offline signature verification.
+func (l *Logger) PublicKeyHex() string {
+	return hex.EncodeToString(l.publicKey)
 }
 
-func (l *Logger) Log(ctx context.Context, sessionID, action string, data map[string]any) (*AuditEntry, error) {
+// Log appends a new signed entry to the session's audit chain.
+func (l *Logger) Log(_ context.Context, sessionID, action string, data map[string]any) (*AuditEntry, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -73,11 +74,11 @@ func (l *Logger) Log(ctx context.Context, sessionID, action string, data map[str
 	}
 
 	content := fmt.Sprintf("%s:%s:%d:%v:%s", sessionID, action, seq, data, prev)
-	entryHash := sha256Hex(content + prev)
+	h := sha256.New()
+	h.Write([]byte(content))
+	entryHash := hex.EncodeToString(h.Sum(nil))
 
 	sig := ed25519.Sign(l.privateKey, []byte(entryHash))
-	signature := hex.EncodeToString(sig)
-
 	entry := AuditEntry{
 		ID:        fmt.Sprintf("audit-%d", time.Now().UnixNano()),
 		SessionID: sessionID,
@@ -86,14 +87,34 @@ func (l *Logger) Log(ctx context.Context, sessionID, action string, data map[str
 		Data:      data,
 		EntryHash: entryHash,
 		PrevHash:  prev,
-		Signature: signature,
+		Signature: hex.EncodeToString(sig),
 		CreatedAt: time.Now(),
 	}
 
-	if err := l.store.Set(entry.ID, entry); err != nil {
+	if err := l.store.Set(sessionID, entry.ID, entry); err != nil {
 		return nil, err
 	}
-
 	l.prevHash[sessionID] = entryHash
 	return &entry, nil
+}
+
+// GetBySession returns all audit entries for a session, ordered by sequence number.
+func (l *Logger) GetBySession(sessionID string) []AuditEntry {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	all := l.store.GetAll(sessionID)
+	entries := make([]AuditEntry, 0, len(all))
+	for _, e := range all {
+		entries = append(entries, e)
+	}
+	// Sort by sequence number
+	for i := 0; i < len(entries); i++ {
+		for j := i + 1; j < len(entries); j++ {
+			if entries[j].SeqNum < entries[i].SeqNum {
+				entries[i], entries[j] = entries[j], entries[i]
+			}
+		}
+	}
+	return entries
 }
