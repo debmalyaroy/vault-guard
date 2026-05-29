@@ -52,3 +52,4 @@ data/*.db.lock
 # Backend binary
 backend/vaultguard
 backend/*.exe
+.claude/
