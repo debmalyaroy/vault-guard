@@ -58,6 +58,9 @@ backend/output.log
 backend/*.log
 backend/targets/
 
+
+frontend/playwright-report/
+frontend/test-results/
 # Mermaid CLI generated SVGs (rendered via VitePress plugin instead)
 docs/*.svg
 
