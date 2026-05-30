@@ -31,9 +31,11 @@ export default withMermaid(
           items: [
             { text: 'Deployment Guide', link: '/USER_GUIDE_AND_DEPLOYMENT' },
             { text: 'Demo Script', link: '/DEMO_SCRIPT' },
+            { text: 'UI Mockups', link: '/UI_MOCKUPS' },
             { text: 'Roadmap', link: '/ROADMAP' },
           ],
         },
+        { text: '🎯 Presentation', link: '/presentation.html', target: '_blank' },
         { text: 'GitHub', link: 'https://github.com/debmalyaroy/vault-guard', target: '_blank' },
       ],
 
@@ -54,6 +56,7 @@ export default withMermaid(
           items: [
             { text: 'Deployment Guide', link: '/USER_GUIDE_AND_DEPLOYMENT' },
             { text: 'Demo Script', link: '/DEMO_SCRIPT' },
+            { text: 'UI Mockups', link: '/UI_MOCKUPS' },
             { text: 'Roadmap', link: '/ROADMAP' },
           ],
         },

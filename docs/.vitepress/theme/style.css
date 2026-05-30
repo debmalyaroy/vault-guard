@@ -1,253 +1,437 @@
-/* VaultGuard Documentation — Hacker Terminal Dark Theme */
+/* VaultGuard Documentation Theme
+   Dark: hacker terminal (#0a0e17 bg, #00ff41 green)
+   Light: clean readable with dark green accents
+   ------------------------------------------------- */
 
+/* ── Font families ─────────────────────────────── */
 :root {
-  --vp-c-brand-1: #00ff41;
-  --vp-c-brand-2: #00cc33;
-  --vp-c-brand-3: #009922;
-  --vp-c-brand-soft: rgba(0, 255, 65, 0.12);
-
-  --vp-c-text-1: #e2e8f0;
-  --vp-c-text-2: #94a3b8;
-  --vp-c-text-3: #64748b;
-
   --vp-font-family-base: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
   --vp-font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 }
 
+/* ── DARK MODE variables ─────────────────────────── */
 .dark {
-  --vp-c-bg: #0a0e17;
-  --vp-c-bg-alt: #0d1117;
-  --vp-c-bg-elv: #161b22;
-  --vp-c-bg-soft: #161b22;
+  --vp-c-bg:       #0a0e17;
+  --vp-c-bg-alt:   #0d1117;
+  --vp-c-bg-elv:   #161b22;
+  --vp-c-bg-soft:  #161b22;
 
-  --vp-c-border: #30363d;
-  --vp-c-divider: #21262d;
+  --vp-c-border:   #30363d;
+  --vp-c-divider:  #21262d;
 
-  --vp-c-text-1: #e2e8f0;
-  --vp-c-text-2: #94a3b8;
-  --vp-c-text-3: #64748b;
+  --vp-c-text-1:   #e2e8f0;
+  --vp-c-text-2:   #94a3b8;
+  --vp-c-text-3:   #64748b;
 
-  --vp-c-brand-1: #00ff41;
-  --vp-c-brand-2: #00cc33;
+  --vp-c-brand-1:  #00ff41;
+  --vp-c-brand-2:  #00cc33;
+  --vp-c-brand-3:  #009922;
   --vp-c-brand-soft: rgba(0, 255, 65, 0.10);
 
-  --vp-code-bg: #161b22;
-  --vp-code-color: #58a6ff;
+  --vp-code-bg:    #161b22;
+  --vp-code-color: #79c0ff;
 
   --vp-sidebar-bg-color: #0d1117;
-  --vp-nav-bg-color: rgba(10, 14, 23, 0.90);
+  --vp-nav-bg-color:     rgba(10, 14, 23, 0.92);
+
+  /* heading decoration */
+  --vg-h2-prefix-color: rgba(0, 255, 65, 0.40);
+  --vg-h3-prefix-color: rgba(0, 255, 65, 0.25);
+  --vg-h2-border:       #21262d;
+
+  /* table */
+  --vg-table-even-bg:   #0d1117;
+  --vg-th-bg:           #161b22;
+  --vg-th-color:        #00ff41;
+
+  /* code blocks */
+  --vg-code-block-bg:   #0d1117;
+  --vg-code-block-border: #21262d;
+
+  /* inline code */
+  --vg-inline-code-bg:  #161b22;
+  --vg-inline-code-fg:  #79c0ff;
+  --vg-inline-code-border: #30363d;
+
+  /* mermaid container */
+  --vg-mermaid-bg:      #0d1117;
+  --vg-mermaid-border:  #21262d;
+
+  /* blockquote */
+  --vg-blockquote-bg:   #0d1117;
+  --vg-blockquote-fg:   #94a3b8;
+
+  /* mermaid toolbar / viewer */
+  --vg-toolbar-bg:      #161b22;
+  --vg-toolbar-border:  #30363d;
+  --vg-toolbar-fg:      #4ade80;
+  --vg-btn-bg:          #0d1117;
+  --vg-btn-hover-bg:    #21262d;
+  --vg-btn-fg:          #4ade80;
+  --vg-modal-overlay:   rgba(0,0,0,0.85);
+  --vg-modal-bg:        #0d1117;
+  --vg-modal-header-bg: #161b22;
 }
 
-/* Force dark mode by default */
-html {
-  color-scheme: dark;
+/* ── LIGHT MODE variables ────────────────────────── */
+html:not(.dark) {
+  --vp-c-bg:       #ffffff;
+  --vp-c-bg-alt:   #f6f8fa;
+  --vp-c-bg-elv:   #f0f2f5;
+  --vp-c-bg-soft:  #f6f8fa;
+
+  --vp-c-border:   #d0d7de;
+  --vp-c-divider:  #e5e7eb;
+
+  --vp-c-text-1:   #1a1f2e;
+  --vp-c-text-2:   #374151;
+  --vp-c-text-3:   #6b7280;
+
+  --vp-c-brand-1:  #00882a;
+  --vp-c-brand-2:  #006e22;
+  --vp-c-brand-3:  #00551a;
+  --vp-c-brand-soft: rgba(0, 136, 42, 0.10);
+
+  --vp-code-bg:    #f3f4f6;
+  --vp-code-color: #1d4ed8;
+
+  --vp-sidebar-bg-color: #f6f8fa;
+  --vp-nav-bg-color:     rgba(255, 255, 255, 0.95);
+
+  /* heading decoration */
+  --vg-h2-prefix-color: rgba(0, 136, 42, 0.40);
+  --vg-h3-prefix-color: rgba(0, 136, 42, 0.25);
+  --vg-h2-border:       #e5e7eb;
+
+  /* table */
+  --vg-table-even-bg:   #f6f8fa;
+  --vg-th-bg:           #f0f2f5;
+  --vg-th-color:        #006e22;
+
+  /* code blocks */
+  --vg-code-block-bg:   #f6f8fa;
+  --vg-code-block-border: #d0d7de;
+
+  /* inline code */
+  --vg-inline-code-bg:     #eef2ff;
+  --vg-inline-code-fg:     #1d4ed8;
+  --vg-inline-code-border: #c7d2fe;
+
+  /* mermaid container */
+  --vg-mermaid-bg:     #f9fafb;
+  --vg-mermaid-border: #d0d7de;
+
+  /* blockquote */
+  --vg-blockquote-bg:  #f0f7f2;
+  --vg-blockquote-fg:  #374151;
+
+  /* mermaid toolbar / viewer */
+  --vg-toolbar-bg:      #f0f2f5;
+  --vg-toolbar-border:  #d0d7de;
+  --vg-toolbar-fg:      #00882a;
+  --vg-btn-bg:          #ffffff;
+  --vg-btn-hover-bg:    #e5f2e9;
+  --vg-btn-fg:          #006e22;
+  --vg-modal-overlay:   rgba(0,0,0,0.6);
+  --vg-modal-bg:        #ffffff;
+  --vg-modal-header-bg: #f0f2f5;
 }
 
-/* Navigation */
+/* ── Navigation ──────────────────────────────────── */
 .VPNav {
-  border-bottom: 1px solid #00ff4125 !important;
-  background: rgba(10, 14, 23, 0.95) !important;
+  border-bottom: 1px solid var(--vp-c-border) !important;
+  background: var(--vp-nav-bg-color) !important;
   backdrop-filter: blur(8px);
 }
 
 .VPNavBarTitle .title {
-  color: #00ff41 !important;
+  color: var(--vp-c-brand-1) !important;
   font-weight: 700;
   letter-spacing: 0.05em;
   font-family: var(--vp-font-family-mono);
 }
 
-/* Sidebar */
+/* ── Sidebar ─────────────────────────────────────── */
 .VPSidebar {
-  background: #0d1117 !important;
-  border-right: 1px solid #21262d !important;
+  background: var(--vp-sidebar-bg-color) !important;
+  border-right: 1px solid var(--vp-c-divider) !important;
 }
 
 .VPSidebarItem.is-active > .item .link .text {
-  color: #00ff41 !important;
+  color: var(--vp-c-brand-1) !important;
 }
 
-/* Home hero */
+/* ── Home page hero ──────────────────────────────── */
 .VPHero .name {
-  background: linear-gradient(135deg, #00ff41, #00cc33, #58a6ff);
+  background: linear-gradient(135deg, var(--vp-c-brand-1), var(--vp-c-brand-2), #3b82f6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .VPHero .tagline {
-  color: #94a3b8 !important;
+  color: var(--vp-c-text-2) !important;
   font-family: var(--vp-font-family-mono);
   font-size: 0.95rem;
 }
 
 .VPButton.medium.brand {
-  background: #00ff41 !important;
-  color: #0a0e17 !important;
+  background: var(--vp-c-brand-1) !important;
+  color: #fff !important;
   border: none !important;
   font-weight: 700;
 }
+.dark .VPButton.medium.brand { color: #0a0e17 !important; }
 
 .VPButton.medium.brand:hover {
-  background: #00cc33 !important;
+  background: var(--vp-c-brand-2) !important;
 }
 
 .VPButton.medium.alt {
-  border: 1px solid #00ff4150 !important;
-  color: #00ff41 !important;
+  border: 1px solid color-mix(in srgb, var(--vp-c-brand-1) 40%, transparent) !important;
+  color: var(--vp-c-brand-1) !important;
 }
 
-/* Feature cards */
+/* ── Feature cards ──────────────────────────────── */
 .VPFeature {
-  background: #0d1117 !important;
-  border: 1px solid #21262d !important;
+  background: var(--vp-c-bg-alt) !important;
+  border: 1px solid var(--vp-c-divider) !important;
   transition: border-color 0.2s ease;
 }
-
 .VPFeature:hover {
-  border-color: #00ff4150 !important;
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 50%, transparent) !important;
 }
+.VPFeature .title   { color: var(--vp-c-text-1) !important; }
+.VPFeature .details { color: var(--vp-c-text-2) !important; }
 
-.VPFeature .title {
-  color: #e2e8f0 !important;
-}
-
-.VPFeature .details {
-  color: #94a3b8 !important;
-}
-
-/* Code blocks */
+/* ── Code blocks ────────────────────────────────── */
 div[class*="language-"] {
-  background: #0d1117 !important;
-  border: 1px solid #21262d;
+  background: var(--vg-code-block-bg) !important;
+  border: 1px solid var(--vg-code-block-border);
   border-radius: 6px;
 }
+.vp-code-group .tabs { background: var(--vp-c-bg-elv) !important; }
 
-.vp-code-group .tabs {
-  background: #161b22 !important;
-}
+/* ── Headings ────────────────────────────────────── */
+h1, h2, h3 { font-family: var(--vp-font-family-mono) !important; }
 
-/* Headings */
-h1, h2, h3 {
-  font-family: var(--vp-font-family-mono) !important;
-}
-
-h2 {
-  border-top: 1px solid #21262d !important;
-}
+h2 { border-top: 1px solid var(--vg-h2-border) !important; }
 
 h2::before {
   content: '## ';
-  color: #00ff4166;
+  color: var(--vg-h2-prefix-color);
 }
-
 h3::before {
   content: '### ';
-  color: #00ff4144;
+  color: var(--vg-h3-prefix-color);
 }
 
-/* Tables */
-.vp-doc table {
-  border-collapse: collapse;
-}
-
-.vp-doc tr {
-  border-top: 1px solid #21262d;
-  background: transparent;
-}
-
-.vp-doc tr:nth-child(2n) {
-  background: #0d1117;
-}
-
+/* ── Tables ──────────────────────────────────────── */
+.vp-doc table       { border-collapse: collapse; }
+.vp-doc tr          { border-top: 1px solid var(--vp-c-divider); background: transparent; }
+.vp-doc tr:nth-child(2n) { background: var(--vg-table-even-bg); }
 .vp-doc th {
-  background: #161b22 !important;
-  color: #00ff41 !important;
+  background: var(--vg-th-bg) !important;
+  color: var(--vg-th-color) !important;
   font-family: var(--vp-font-family-mono);
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-/* Mermaid diagrams */
+/* ── Mermaid diagram base ───────────────────────── */
 .mermaid {
-  background: #0d1117;
-  border: 1px solid #21262d;
-  border-radius: 8px;
+  background: var(--vg-mermaid-bg);
+  border: 1px solid var(--vg-mermaid-border);
+  border-radius: 6px;
   padding: 1rem;
-  margin: 1rem 0;
-  overflow: auto;
+  overflow: visible;
+  display: block;
+  transition: transform 0.15s ease;
+}
+/* Prevent overlap from transform */
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
 }
 
-/* Inline code */
+/* ── Inline code ─────────────────────────────────── */
 .vp-doc :not(pre) > code {
-  background: #161b22 !important;
-  color: #58a6ff !important;
-  border: 1px solid #30363d;
+  background: var(--vg-inline-code-bg) !important;
+  color:      var(--vg-inline-code-fg) !important;
+  border: 1px solid var(--vg-inline-code-border);
   border-radius: 3px;
+  padding: 0.1em 0.35em;
 }
 
-/* Blockquotes */
+/* ── Blockquotes ────────────────────────────────── */
 .vp-doc blockquote {
-  border-left: 4px solid #00ff41;
-  background: #0d1117;
-  color: #94a3b8;
+  border-left: 4px solid var(--vp-c-brand-1);
+  background: var(--vg-blockquote-bg);
+  color: var(--vg-blockquote-fg);
 }
 
-/* Custom containers */
-.custom-block.tip {
-  border-color: #00ff41;
-  background: rgba(0, 255, 65, 0.06);
-}
+/* ── Custom containers ──────────────────────────── */
+.custom-block.tip     { border-color: var(--vp-c-brand-1); background: var(--vp-c-brand-soft); }
+.custom-block.warning { border-color: #f59e0b; background: rgba(245,158,11,0.07); }
+.custom-block.danger  { border-color: #ef4444; background: rgba(239,68,68,0.07); }
 
-.custom-block.warning {
-  border-color: #f5a623;
-  background: rgba(245, 166, 35, 0.06);
-}
-
-.custom-block.danger {
-  border-color: #f85149;
-  background: rgba(248, 81, 73, 0.06);
-}
-
-/* Footer */
+/* ── Footer ──────────────────────────────────────── */
 .VPFooter {
-  border-top: 1px solid #21262d !important;
-  background: #0d1117 !important;
-  color: #64748b !important;
+  border-top: 1px solid var(--vp-c-divider) !important;
+  background: var(--vp-c-bg-alt) !important;
+  color: var(--vp-c-text-3) !important;
 }
 
-/* Terminal-style scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+/* ── Scrollbar (webkit) ─────────────────────────── */
+::-webkit-scrollbar         { width: 6px; height: 6px; }
+::-webkit-scrollbar-track   { background: var(--vp-c-bg); }
+::-webkit-scrollbar-thumb   { background: var(--vp-c-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--vp-c-brand-1) 60%, transparent); }
 
-::-webkit-scrollbar-track {
-  background: #0d1117;
-}
+/* ── Links ───────────────────────────────────────── */
+.VPLink.active                       { color: var(--vp-c-brand-1) !important; }
+.VPDocFooter .pager-link .title      { color: var(--vp-c-brand-1); }
 
-::-webkit-scrollbar-thumb {
-  background: #30363d;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #00ff4166;
-}
-
-/* Active link */
-.VPLink.active {
-  color: #00ff41 !important;
-}
-
-/* Pagination */
-.VPDocFooter .pager-link .title {
-  color: #00ff41;
-}
-
-/* Search */
+/* ── Search ──────────────────────────────────────── */
 .VPLocalSearchBox {
-  background: #0d1117 !important;
-  border: 1px solid #30363d !important;
+  background: var(--vp-c-bg-alt) !important;
+  border: 1px solid var(--vp-c-border) !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   MERMAID ZOOM VIEWER
+   ═══════════════════════════════════════════════════ */
+
+.vg-mermaid-container {
+  position: relative;
+  margin: 1.25rem 0;
+  border: 1px solid var(--vg-toolbar-border);
+  border-radius: 6px;
+  overflow: visible;
+  background: var(--vg-mermaid-bg);
+}
+
+/* Remove the border from the mermaid el itself when inside our container */
+.vg-mermaid-container .mermaid {
+  border: none;
+  border-radius: 0 0 6px 6px;
+  margin: 0;
+  overflow: auto;
+  max-width: 100%;
+}
+
+.vg-mermaid-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.75rem;
+  background: var(--vg-toolbar-bg);
+  border-bottom: 1px solid var(--vg-toolbar-border);
+  border-radius: 6px 6px 0 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+.vg-mermaid-label {
+  color: var(--vg-toolbar-fg);
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+.vg-mermaid-controls {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.vg-mermaid-btn {
+  background: var(--vg-btn-bg);
+  border: 1px solid var(--vg-toolbar-border);
+  color: var(--vg-btn-fg);
+  border-radius: 3px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.85rem;
+  font-family: var(--vp-font-family-mono);
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.12s, color 0.12s;
+  user-select: none;
+}
+.vg-mermaid-btn:hover {
+  background: var(--vg-btn-hover-bg);
+  color: var(--vp-c-brand-1);
+  border-color: var(--vp-c-brand-1);
+}
+
+/* ── Modal overlay ───────────────────────────────── */
+.vg-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: var(--vg-modal-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  backdrop-filter: blur(4px);
+}
+
+.vg-modal-box {
+  background: var(--vg-modal-bg);
+  border: 1px solid var(--vg-toolbar-border);
+  border-radius: 8px;
+  width: min(95vw, 1400px);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+
+.vg-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: var(--vg-modal-header-bg);
+  border-bottom: 1px solid var(--vg-toolbar-border);
+  font-family: var(--vp-font-family-mono);
+  flex-shrink: 0;
+}
+
+.vg-modal-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--vg-toolbar-fg);
+  text-transform: uppercase;
+}
+
+.vg-modal-controls {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.vg-close-btn {
+  font-size: 0.7rem !important;
+  padding: 0.2rem 0.7rem !important;
+}
+
+.vg-modal-body {
+  overflow: auto;
+  flex: 1;
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.vg-modal-body .mermaid {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  transform-origin: top center;
+  transition: transform 0.15s ease;
 }

@@ -533,7 +533,7 @@ flowchart TD
     SORT["sort.Slice(matches, ...):
     Sort by Similarity descending"] --> TRUNCATE
 
-    TRUNCATE{len(matches) > 5?}
+    TRUNCATE{"len(matches) &gt; 5?"}
     TRUNCATE -->|Yes| CUT["matches = matches[:5]
     Return top-5 only"]
     TRUNCATE -->|No| UNLOCK
@@ -542,11 +542,7 @@ flowchart TD
 
     UNLOCK["c.mu.RUnlock()"] --> PIPELINE_CHECK
 
-    PIPELINE_CHECK{In Guardian Rail Stage 2:
-    len(matches) > 0 AND
-    matches[0].Similarity > 0.92 AND
-    matches[0].AttackType != "" AND
-    matches[0].Confidence > 0?}
+    PIPELINE_CHECK{"Stage 2: matches exist AND<br/>top similarity &gt; 0.92 AND<br/>AttackType not empty?"}
 
     PIPELINE_CHECK -->|Yes| BLOCK["PipelineResult{
     Decision: REDACTED,
@@ -798,7 +794,7 @@ graph LR
         while events[0].Before(cutoff):
           events = events[1:]
         (O(n) scan from front)"]
-        CHECK{len(events) >= limit?}
+        CHECK{"len(events) &gt;= limit?"}
         REJECT["return false, 0
         → HTTP 429 + Retry-After header"]
         ACCEPT["events = append(events, now)

@@ -436,37 +436,35 @@ sequenceDiagram
     participant Logger as audit.Logger
     participant SHA256 as crypto/sha256
     participant Ed25519 as crypto/ed25519
-    participant Store as NestedStore[AuditEntry]<br/>(BoltDB audit bucket)
+    participant Store as BoltDB Audit Bucket
 
-    Note over Logger: Logger holds in-memory state:<br/>sessionSeq map[sessionID]int<br/>prevHash map[sessionID]string<br/>Ed25519 privateKey (ephemeral per process start)
+    Note over Logger: State held per-process:<br/>sessionSeq map, prevHash map,<br/>Ed25519 privateKey (ephemeral)
 
     Caller->>Logger: Log(ctx, sessionID, action, data)
-    Logger->>Logger: mu.Lock() — serialise writes per session
+    Logger->>Logger: mu.Lock() — serialise per session
 
-    Logger->>Logger: sessionSeq[sessionID]++<br/>seq = current sequence number
+    Logger->>Logger: seq = sessionSeq[sessionID]++<br/>prev = prevHash[sessionID]<br/>or 64 zero-hex chars on first entry
 
-    Logger->>Logger: prev = prevHash[sessionID]<br/>(or 64 zero-hex chars for first entry)
+    Logger->>SHA256: sha256(sessionID:action:seq:data:prev)
+    Note over SHA256: Concatenation of all fields<br/>forms the tamper-evident content
+    SHA256-->>Logger: entryHash — 64 hex chars
 
-    Logger->>SHA256: Hash(sessionID:action:seq:data:prevHash)
-    Note over SHA256: content = fmt.Sprintf("%s:%s:%d:%v:%s",<br/>sessionID, action, seq, data, prev)
-    SHA256-->>Logger: entryHash (hex string, 64 chars)
+    Logger->>Ed25519: Sign(privateKey, entryHash bytes)
+    Note over Ed25519: Signs the hex-encoded hash,<br/>not raw binary
+    Ed25519-->>Logger: signature — 128 hex chars
 
-    Logger->>Ed25519: Sign(privateKey, []byte(entryHash))
-    Note over Ed25519: Signs the hex-encoded hash string,<br/>not the raw bytes
-    Ed25519-->>Logger: signature (hex-encoded, 128 chars)
+    Logger->>Logger: Build AuditEntry with<br/>ID, SessionID, SeqNum, Action,<br/>EntryHash, PrevHash, Signature
 
-    Logger->>Logger: Build AuditEntry{<br/>  ID: "audit-{UnixNano}",<br/>  SessionID, SeqNum: seq,<br/>  Action, Data,<br/>  EntryHash, PrevHash: prev,<br/>  Signature, CreatedAt<br/>}
-
-    Logger->>Store: Set(sessionID, entry.ID, entry)
-    Note over Store: Writes to bolt bucket: audit/sessionID/entryID
+    Logger->>Store: Set(sessionID, entryID, entry)
+    Note over Store: Stored at: audit/sessionID/entryID
 
     Logger->>Logger: prevHash[sessionID] = entryHash
-    Note over Logger: Chain link established:<br/>next entry's prev_hash will reference this entry_hash
+    Note over Logger: Chain link established —<br/>next entry PrevHash references this EntryHash
 
     Logger->>Logger: mu.Unlock()
-    Logger-->>Caller: *AuditEntry, nil
+    Logger-->>Caller: AuditEntry, nil
 
-    Note over Caller,Store: Verification (offline):<br/>1. Fetch public key from GET /api/audit/:sessionID<br/>2. For each entry: recompute SHA256(content) → compare entry_hash<br/>3. Verify Ed25519 signature against public key<br/>4. Confirm entry.prev_hash == previous entry.entry_hash
+    Note over Caller,Store: Offline verification:<br/>1. Recompute SHA256 content hash<br/>2. Verify Ed25519 signature<br/>3. Confirm prev_hash chain links
 ```
 
 **Security properties of the audit chain:**
@@ -486,57 +484,27 @@ VaultGuard routes requests to different LLM models based on the task's latency b
 graph TD
     START([Incoming LLM Request]) --> Q1{What is the task?}
 
-    Q1 -->|"Generate embedding<br/>for corpus similarity"| TITAN["Amazon Titan Embed Text v2
-    amazon.titan-embed-text-v2:0
-    1024 dimensions, normalised
-    Used: Stage 2 pre-processing,
-    corpus seeding, custom threat analysis"]
+    Q1 -->|Generate embedding| TITAN["Amazon Titan Embed Text v2<br/>amazon.titan-embed-text-v2:0<br/>1024 dims · Stage 2 + corpus seeding"]
 
-    Q1 -->|"Classify payload as
-    adversarial or benign"| Q2{Volume / Latency?}
+    Q1 -->|Classify payload| Q2{Volume / Latency?}
+    Q2 -->|High volume, latency-sensitive| NOVA_LITE["Amazon Nova Lite<br/>amazon.nova-lite-v1:0<br/>Stage 3 classifier · fast + cheap"]
 
-    Q2 -->|"High volume, latency-sensitive
-    Stage 3 of every pipeline call"| NOVA_LITE["Amazon Nova Lite
-    amazon.nova-lite-v1:0
-    Fast & cheap: $0.06/$0.24 per 1M tokens
-    Returns: {is_adversarial, attack_type,
-    sophistication, confidence}"]
+    Q1 -->|Detect goal drift| LLAMA["Meta Llama 3.3 70B Instruct<br/>meta.llama3-3-70b-instruct-v1:0<br/>Stage 5 drift · strong reasoning"]
 
-    Q1 -->|"Detect goal drift
-    against task anchor"| LLAMA["Meta Llama 3.3 70B Instruct
-    meta.llama3-3-70b-instruct-v1:0
-    Strong reasoning, open-weight model
-    Returns: {drift_score: 0.0–1.0}
-    Used: Stage 5 of pipeline"]
+    Q1 -->|Compile policy or generate variants| NOVA_PRO["Amazon Nova Pro<br/>amazon.nova-pro-v1:0<br/>Threat Builder + policy compilation"]
 
-    Q1 -->|"Compile policy JSON from
-    natural language description
-    OR generate attack variants"| NOVA_PRO["Amazon Nova Pro
-    amazon.nova-pro-v1:0
-    High capability for complex tasks
-    Low-volume, latency-tolerant
-    Used: Custom threat builder variants,
-    policy compilation"]
+    Q2 -->|Override via BEDROCK_CLASSIFIER_MODEL| CUSTOM_C["Custom classifier model<br/>operator-configured"]
 
-    Q2 -->|"Override via env var
-    BEDROCK_CLASSIFIER_MODEL"| CUSTOM_C["Custom classifier model
-    (operator-configured)"]
+    TITAN --> ENV1{BEDROCK_EMBED_MODEL set?}
+    ENV1 -->|Yes| CUSTOM_E["Custom embed model<br/>operator-configured"]
+    ENV1 -->|No — use default| TITAN_DEFAULT["Titan Embed Text v2<br/>default embed model"]
 
-    TITAN --> ENV1{BEDROCK_EMBED_MODEL<br/>env var set?}
-    ENV1 -->|Yes| CUSTOM_E["Custom embed model"]
-    ENV1 -->|No| TITAN
-
-    NOVA_LITE --> MOCK{USE_MOCK_BEDROCK<br/>= true?}
+    NOVA_LITE --> MOCK{USE_MOCK_BEDROCK = true?}
     LLAMA --> MOCK
     NOVA_PRO --> MOCK
-    MOCK -->|Yes| MOCK_CLIENT["MockClient
-    (bedrock/mock.go)
-    Deterministic pseudo-responses
-    Enables offline demos + CI"]
-    MOCK -->|No| REAL["AWSBedrockClient
-    (bedrock/client.go)
-    Uses default credential chain
-    Region: AWS_REGION or us-east-1"]
+    CUSTOM_C --> MOCK
+    MOCK -->|Yes| MOCK_CLIENT["MockClient<br/>bedrock/mock.go<br/>Deterministic · offline CI"]
+    MOCK -->|No| REAL["AWSBedrockClient<br/>bedrock/client.go<br/>Default credential chain"]
 ```
 
 **Model override environment variables:**
