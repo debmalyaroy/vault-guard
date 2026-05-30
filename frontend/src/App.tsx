@@ -7,13 +7,15 @@ import CorpusAnalytics from './components/CorpusAnalytics';
 import ThreatBuilder from './components/ThreatBuilder';
 import CampaignMode from './components/CampaignMode';
 import AuditTrail from './components/AuditTrail';
+import AgentSandbox from './components/AgentSandbox';
+import EventFirehose from './components/EventFirehose';
 import { useWebSocket } from './lib/WebSocketContext';
 import { decodeState, updateState } from './lib/urlState';
 import { Shield, Sun, Moon, Share2, Check } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8080';
 
-type TabId = 'playground' | 'threats' | 'campaigns' | 'blast' | 'analytics' | 'audit';
+type TabId = 'playground' | 'threats' | 'campaigns' | 'blast' | 'analytics' | 'audit' | 'sandbox';
 
 const TABS: { id: TabId; label: string; path: string }[] = [
   { id: 'playground', label: 'Playground', path: '/usr/bin/attacker' },
@@ -22,6 +24,7 @@ const TABS: { id: TabId; label: string; path: string }[] = [
   { id: 'blast', label: 'Blast Radius', path: '/var/log/blast' },
   { id: 'analytics', label: 'Analytics', path: '/var/log/corpus' },
   { id: 'audit', label: 'Audit Trail', path: '/etc/vaultguard/audit' },
+  { id: 'sandbox', label: 'Agent Sandbox', path: '/opt/vaultguard/sandbox' },
 ];
 
 function App() {
@@ -239,7 +242,17 @@ function App() {
           </div>
         )}
 
+        {/* ── Agent Sandbox (BYOA) ── */}
+        {activeTab === 'sandbox' && (
+          <div className="h-full overflow-hidden">
+            <AgentSandbox sessionId={sessionId} />
+          </div>
+        )}
+
       </main>
+
+      {/* ── WS Event Firehose (pinned to page bottom) ── */}
+      <EventFirehose />
     </div>
   );
 }

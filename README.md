@@ -63,16 +63,37 @@ docker compose up -d
 
 ---
 
-## Demo Playground — 6 Tabs
+## Demo Playground — 7 Tabs
 
 | Tab | Feature |
 |---|---|
 | **Playground** | Attack Console + dual Agent Arena (protected vs unprotected) + VaultGuard Shield |
-| **Threat Builder** | Mode A: craft payloads + generate variants · Mode B: define vulnerability graph |
+| **Threat Builder** | Mode A: craft payloads + generate variants · Mode B: define vulnerability graph · Glass Box trace |
 | **Campaigns** | All 10 OWASP Agentic Top 10 campaigns with live WebSocket streaming |
 | **Blast Radius** | ReactFlow impact graph with severity-coloured nodes and propagation edges |
-| **Analytics** | Recharts dashboard: 24h timeseries, attack type bar, OWASP radar |
-| **Audit Trail** | Ed25519 chain verification + CSV/PDF export |
+| **Analytics** | Recharts dashboard + Corpus Browser (search 540+ patterns) + Threat Correlation Graph |
+| **Audit Trail** | Ed25519 chain verification + browser WebCrypto verifier + deterministic replay |
+| **Agent Sandbox** | Register your own agent — VaultGuard wraps every input, shows full pipeline trace |
+
+---
+
+## Judge Transparency
+
+Everything VaultGuard claims can be independently verified without trusting this documentation.
+
+| Claim | How to verify |
+|-------|--------------|
+| 5-stage pipeline runs in order | Glass Box Mode in Threat Builder — shows every stage with timing |
+| Real LLM calls to AWS Bedrock | `[LIVE AWS]` badge + model ID (`amazon.nova-lite-v1:0`) + latency in Glass Box |
+| 500+ threat patterns in corpus | Corpus Browser in Analytics tab · `GET /api/corpus/stats` |
+| Ed25519 signatures are valid | Audit Trail → Verify Entry → WebCrypto verify in browser |
+| Blast radius is calculated | `GET /api/blast/:sessionID` shows affected tools + risk score |
+| Pipeline is deterministic | Audit Trail → Replay Session → `✓ DETERMINISTIC` badge |
+| Policy enforcement is granular | VaultGuard Shield → Probe Policy → boundary payload table |
+| Corpus is a semantic graph | Analytics → Correlation Graph — cosine-similarity edges between patterns |
+| Wraps any agent transparently | Agent Sandbox → register your agent → fire malicious input → see BLOCKED + trace |
+
+See the **[Judge Verification Guide](https://debmalyaroy.github.io/vault-guard/JUDGE_VERIFICATION)** for step-by-step verification instructions including `curl` commands and browser walkthroughs.
 
 ---
 
@@ -80,13 +101,21 @@ docker compose up -d
 
 | Feature | Status |
 |---|---|
-| Guardian Rail 5-stage pipeline | ✅ |
+| GuardianRail 5-stage pipeline | ✅ |
+| Glass Box Mode (per-stage LLM trace) | ✅ |
 | Threat Ledger (BoltDB + binary embeddings) | ✅ |
 | 540+ OWASP Agentic Top 10 seed corpus | ✅ |
+| Corpus Browser (full-text search) | ✅ |
+| Threat Correlation Graph (ReactFlow) | ✅ |
 | Blast Radius Engine (0–100 score) | ✅ |
 | OWASP Campaign Mode (OAT-01 → OAT-10) | ✅ |
 | Manual Threat Builder (Mode A + B) | ✅ |
 | Ed25519 tamper-evident audit chain | ✅ |
+| Browser WebCrypto audit verifier | ✅ |
+| Deterministic audit replay | ✅ |
+| Adversarial policy probe generator | ✅ |
+| Bring Your Own Agent (BYOA) sandbox | ✅ |
+| WebSocket Event Firehose | ✅ |
 | CSV + PDF audit export | ✅ |
 | Rate limiting middleware | ✅ |
 | ReactFlow blast radius graph | ✅ |
@@ -94,7 +123,9 @@ docker compose up -d
 | Shareable demo URLs | ✅ |
 | Docker Compose deployment | ✅ |
 | VitePress docs with Mermaid | ✅ |
-| Integration test suite (50+ cases) | ✅ |
+| Backend unit + handler tests | ✅ |
+| Frontend Vitest unit tests (32) | ✅ |
+| Playwright E2E spec suite (9 files) | ✅ |
 
 ---
 

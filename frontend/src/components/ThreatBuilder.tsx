@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Zap, Shield, ChevronRight, Copy, AlertCircle, CheckCircle } from 'lucide-react';
+import { Zap, Shield, ChevronRight, Copy, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { PipelineTracePanel, type PipelineTrace } from './PipelineTracePanel';
 
 const API_BASE = 'http://localhost:8080';
 
@@ -37,14 +38,21 @@ const PIPELINE_STAGES = [
   { key: 5, label: 'Output Filter' },
 ];
 
+interface BlastRadiusResult {
+  score: number;
+  severity?: string;
+  affected_tools?: unknown[];
+}
+
 interface ThreatResult {
   decision: string;
   threat_type: string;
   confidence: number;
   stage_caught: number;
   corpus_status: string;
-  blast_radius: number;
+  blast_radius: BlastRadiusResult | number | null;
   variants?: string[];
+  trace?: PipelineTrace;
 }
 
 function DecisionBadge({ decision }: { decision: string }) {
@@ -105,6 +113,7 @@ function PromptThreatTab({ sessionId }: { sessionId?: string }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ThreatResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [glassBox, setGlassBox] = useState(false);
 
   const analyze = async (_generateVariants = false) => {
     if (!payload.trim()) return;
@@ -237,8 +246,23 @@ function PromptThreatTab({ sessionId }: { sessionId?: string }) {
                 {result.threat_type} &bull; conf: {(result.confidence * 100).toFixed(0)}%
               </span>
             </div>
-            <div className="text-xs text-green-700">
-              Blast: <span className="text-orange-400 font-bold">{result.blast_radius}</span>
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-green-700">
+                Blast: <span className="text-orange-400 font-bold">{typeof result.blast_radius === 'object' && result.blast_radius !== null ? result.blast_radius.score : result.blast_radius ?? 0}</span>
+              </div>
+              {result.trace && (
+                <button
+                  onClick={() => setGlassBox(v => !v)}
+                  className={`flex items-center gap-1 text-xs font-mono border px-2 py-0.5 transition-colors ${
+                    glassBox
+                      ? 'border-green-500 text-green-400 bg-green-900/20'
+                      : 'border-green-900 text-green-700 hover:border-green-600 hover:text-green-500'
+                  }`}
+                >
+                  {glassBox ? <Eye size={11} /> : <EyeOff size={11} />}
+                  Glass Box
+                </button>
+              )}
             </div>
           </div>
 
@@ -266,6 +290,11 @@ function PromptThreatTab({ sessionId }: { sessionId?: string }) {
               <PipelineVisual stageCaught={result.stage_caught} />
             </div>
           </div>
+
+          {/* Glass Box Trace Panel */}
+          {glassBox && result.trace && (
+            <PipelineTracePanel trace={result.trace} />
+          )}
 
           {/* Variants */}
           {result.variants && result.variants.length > 0 && (

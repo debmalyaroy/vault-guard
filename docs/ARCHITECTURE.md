@@ -598,3 +598,104 @@ When a limit is exceeded, the server returns HTTP 429 with `Retry-After` header 
 ```
 
 For production deployment, the Go binary and `data/` directory should be co-located. The BoltDB file uses file-level locking (`bbolt.Open` with `0600` permissions), so only one process may open it at a time. Horizontal scaling requires either migrating to a shared database (PostgreSQL + pgvector) or using a distributed KV store — the `store.BoltStore[T]` interface is designed for this substitution.
+
+---
+
+## Diagram 9 — Glass Box Trace Data Flow
+
+The Glass Box feature surfaces the complete per-stage execution trace back to API consumers and the UI, enabling independent verification of every pipeline decision.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as REST API<br/>(handlers/api.go)
+    participant Pipeline as GuardianRail<br/>(guardian/pipeline.go)
+    participant LLM as AWS Bedrock<br/>(LLM Client)
+
+    Client->>API: POST /api/threats/custom<br/>{ payload, session_id }
+    API->>Pipeline: Process(ctx, payload, agentCtx)
+    
+    Note over Pipeline: Stage 1: Pattern Match
+    Pipeline-->>Pipeline: StageTrace{stage_num:1, passed:true, detail:{matched_patterns}}
+    
+    Note over Pipeline: Stage 2: Corpus Search
+    Pipeline->>LLM: Embed(ctx, stripped_payload)
+    LLM-->>Pipeline: []float32 embedding
+    Pipeline-->>Pipeline: CosineSimilarity scan → StageTrace{stage_num:2, matches}
+    
+    Note over Pipeline: Stages 3+5 (concurrent goroutines)
+    par Stage 3: LLM Classifier
+        Pipeline->>LLM: Converse(ctx, NovaLite, classifierPrompt, payload)
+        LLM-->>Pipeline: {is_adversarial, attack_type, confidence}
+        Pipeline-->>Pipeline: StageTrace{stage_num:3, model_id, raw_response, caught_here}
+    and Stage 5: Goal Drift
+        Pipeline->>LLM: Converse(ctx, Llama3.3, driftPrompt, payload)
+        LLM-->>Pipeline: {drift_score}
+        Pipeline-->>Pipeline: StageTrace{stage_num:5, drift_score}
+    end
+
+    Note over Pipeline: Stage 4: Policy Enforcer
+    Pipeline-->>Pipeline: StageTrace{stage_num:4, action, violated_rule}
+
+    Pipeline-->>API: PipelineResult{Decision, Trace:PipelineTrace{Stages[5], TotalMs}}
+    API-->>Client: CustomThreatResponse{decision, trace:{stages, total_ms}}
+```
+
+**Key design:** Stages 3 and 5 run concurrently in goroutines — each goroutine captures its own `start := time.Now()` before calling Bedrock, so timing is isolated. The trace is only assembled after `wg.Wait()`.
+
+---
+
+## Diagram 10 — Custom Agent Wrap Flow (BYOA)
+
+Judges register their own AI agent (name + system prompt). VaultGuard wraps it so every input is screened before reaching the judge's agent. Blocked inputs are fully audited but never forwarded.
+
+```mermaid
+sequenceDiagram
+    participant Judge
+    participant API as REST API
+    participant Rail as GuardianRail
+    participant Bedrock as AWS Bedrock<br/>(Nova Pro)
+    participant Audit as Audit Logger<br/>(Ed25519)
+
+    Note over Judge,Audit: Registration (one-time)
+    Judge->>API: POST /api/agents<br/>{ name, system_prompt, tools[] }
+    API-->>Judge: { agent_id, session_id }
+
+    Note over Judge,Audit: Each Interaction
+    Judge->>API: POST /api/agents/:id/interact<br/>{ message }
+    API->>Rail: Process(ctx, message, agentCtx)
+
+    alt Input is ADVERSARIAL
+        Rail-->>API: PipelineResult{Decision:REDACTED, StageCaught:3, Trace}
+        API->>Audit: Log(sessionID, "agent_interaction_blocked", {stage, decision})
+        API-->>Judge: { blocked:true, trace, audit_id }
+        Note over Judge: ← Agent NEVER sees this message
+    else Input is BENIGN
+        Rail-->>API: PipelineResult{Decision:ALLOW, CleanPayload, Trace}
+        API->>Bedrock: Converse(ctx, NovaProModel, judge.SystemPrompt, cleanPayload)
+        Bedrock-->>API: agentResponse
+        API->>Audit: Log(sessionID, "agent_interaction_allowed", {response_len})
+        API-->>Judge: { blocked:false, agent_response, trace, blast_result, audit_id }
+    end
+```
+
+**Key properties:**
+- Audit entries are written for **both** blocked and allowed interactions — creating a complete tamper-evident history
+- The judge's system prompt is only sent to Bedrock for allowed inputs
+- The trace always returns so judges can see exactly which stage made the blocking decision
+
+---
+
+## Custom Agent Wrapping — Architecture Notes
+
+The BYOA (Bring Your Own Agent) feature allows judges to register arbitrary AI agents described by a system prompt. VaultGuard wraps these agents transparently:
+
+1. **Registration**: Judge submits `name`, `system_prompt`, and `tools[]` via `POST /api/agents`. The agent is persisted in BoltDB bucket `custom_agents` with a UUID.
+
+2. **Interaction wrap**: On `POST /api/agents/:id/interact`, the input is run through the full 5-stage GuardianRail pipeline *before* any call is made to the judge's agent. The judge's system prompt is never shown to the pipeline classifier — the pipeline only sees the raw user message.
+
+3. **Block path**: If any stage catches the input, VaultGuard returns `blocked: true` with the full pipeline trace. The judge's agent is never invoked.
+
+4. **Allow path**: If all stages pass, VaultGuard calls Bedrock (`amazon.nova-pro-v1:0`) with the judge's `system_prompt` as the system message and the `CleanPayload` (invisible-char-stripped input) as the user message.
+
+5. **Persistence**: Both `CustomAgent` and `CustomInteraction` structs are stored in BoltDB via the generic `store.BoltStore[T]` adapter. Interaction keys use the format `{agentID}:{unixNano}` for ordered retrieval.

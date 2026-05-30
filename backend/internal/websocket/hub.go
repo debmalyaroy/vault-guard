@@ -49,16 +49,32 @@ func (h *Hub) Run() {
 			h.mu.Unlock()
 
 		case message := <-h.broadcast:
+			// Collect stale clients under read lock, clean up under write lock
 			h.mu.RLock()
-			for _, client := range h.clients {
+			snapshot := make([]*Client, 0, len(h.clients))
+			for _, c := range h.clients {
+				snapshot = append(snapshot, c)
+			}
+			h.mu.RUnlock()
+
+			var stale []*Client
+			for _, client := range snapshot {
 				select {
 				case client.Send <- message:
 				default:
-					close(client.Send)
-					delete(h.clients, client.SessionID)
+					stale = append(stale, client)
 				}
 			}
-			h.mu.RUnlock()
+			if len(stale) > 0 {
+				h.mu.Lock()
+				for _, client := range stale {
+					if _, ok := h.clients[client.SessionID]; ok {
+						delete(h.clients, client.SessionID)
+						close(client.Send)
+					}
+				}
+				h.mu.Unlock()
+			}
 		}
 	}
 }
@@ -68,9 +84,15 @@ func (h *Hub) SendToSession(sessionID string, event Event) {
 	client, ok := h.clients[sessionID]
 	h.mu.RUnlock()
 
-	if ok {
-		data, _ := json.Marshal(event)
-		client.Send <- data
+	if !ok {
+		return
+	}
+	data, _ := json.Marshal(event)
+	// Recover from panic if channel was closed between lookup and send
+	defer func() { recover() }() //nolint:errcheck
+	select {
+	case client.Send <- data:
+	default:
 	}
 }
 

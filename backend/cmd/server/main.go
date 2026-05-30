@@ -105,6 +105,11 @@ func main() {
 		log.Fatalf("Campaign runner: %v", err)
 	}
 
+	customAgentMgr, err := agent.NewCustomAgentManager(db)
+	if err != nil {
+		log.Fatalf("Custom agent manager: %v", err)
+	}
+
 	appCtx := &handlers.AppContext{
 		Hub:            hub,
 		SessionMgr:     sessMgr,
@@ -115,6 +120,7 @@ func main() {
 		BlastEngine:    blastEngine,
 		CampaignRunner: campaignRunner,
 		LLM:            llm,
+		CustomAgentMgr: customAgentMgr,
 	}
 
 	// ── Rate limiter ─────────────────────────────────────────────────────────
@@ -143,10 +149,17 @@ func main() {
 		// Corpus
 		api.GET("/corpus/stats", handlers.GetCorpusStats(appCtx))
 		api.GET("/corpus/timeseries", handlers.GetCorpusTimeseries(appCtx))
+		api.GET("/corpus/search", handlers.GetCorpusSearch(appCtx))
+		api.GET("/corpus/graph", handlers.GetCorpusGraph(appCtx))
 
-		// Audit
+		// Audit — static routes must come before :sessionID parameter route
+		api.GET("/audit/public-key", handlers.GetAuditPublicKey(appCtx))
 		api.GET("/audit/:sessionID", handlers.GetAuditLog(appCtx))
 		api.GET("/audit/:sessionID/export", limiter.ExportLimit(), handlers.ExportAuditLog(appCtx))
+		api.POST("/audit/:sessionID/replay", handlers.ReplayAudit(appCtx))
+
+		// Policy probe
+		api.POST("/policy/:id/probe", limiter.AttackLimit(), handlers.ProbePolicy(appCtx))
 
 		// Blast radius
 		api.GET("/blast/:sessionID", handlers.GetBlastRadius(appCtx))
@@ -159,6 +172,13 @@ func main() {
 
 		// Custom threat builder
 		api.POST("/threats/custom", limiter.AttackLimit(), handlers.AnalyzeCustomThreat(appCtx))
+
+		// Custom agents (BYOA)
+		api.POST("/agents", handlers.RegisterCustomAgent(appCtx))
+		api.GET("/agents", handlers.ListCustomAgents(appCtx))
+		api.DELETE("/agents/:agentId", handlers.DeleteCustomAgent(appCtx))
+		api.POST("/agents/:agentId/interact", limiter.AttackLimit(), handlers.InteractWithCustomAgent(appCtx))
+		api.GET("/agents/:agentId/history", handlers.GetCustomAgentHistory(appCtx))
 	}
 
 	// WebSocket

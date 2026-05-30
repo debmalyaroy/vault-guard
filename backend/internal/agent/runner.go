@@ -52,7 +52,7 @@ func (r *Runner) RunAgent(ctx context.Context, sessionID, agentID, targetURL, pa
 		if res.Decision != "ALLOW" {
 			r.emitLog(sessionID, agentID, fmt.Sprintf("🛡️ Threat intercepted! Stage: %d, Action: %s", res.StageCaught, res.Decision))
 
-			// Broadcast Threat Event
+			// Broadcast Threat Event with full pipeline trace
 			r.hub.SendToSession(sessionID, websocket.Event{
 				Type: "threat_event",
 				Payload: map[string]any{
@@ -62,6 +62,7 @@ func (r *Runner) RunAgent(ctx context.Context, sessionID, agentID, targetURL, pa
 					"stage":         res.StageCaught,
 					"action":        res.Decision,
 					"corpus_status": res.CorpusStatus,
+					"trace":         res.Trace,
 				},
 			})
 

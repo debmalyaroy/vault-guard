@@ -26,6 +26,7 @@ export default withMermaid(
         { text: 'Home', link: '/' },
         { text: 'Architecture', link: '/ARCHITECTURE' },
         { text: 'Low-Level Design', link: '/LOW_LEVEL_DESIGN' },
+        { text: 'Judge Verification', link: '/JUDGE_VERIFICATION' },
         {
           text: 'Guides',
           items: [
@@ -54,6 +55,7 @@ export default withMermaid(
         {
           text: 'Operations',
           items: [
+            { text: 'Judge Verification', link: '/JUDGE_VERIFICATION' },
             { text: 'Deployment Guide', link: '/USER_GUIDE_AND_DEPLOYMENT' },
             { text: 'Demo Script', link: '/DEMO_SCRIPT' },
             { text: 'UI Mockups', link: '/UI_MOCKUPS' },

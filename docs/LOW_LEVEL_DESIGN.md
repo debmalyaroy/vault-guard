@@ -1292,3 +1292,242 @@ The `MockClient` returns deterministic pseudo-responses without making any netwo
 2. Shared credentials file: `~/.aws/credentials`
 3. IAM roles for EC2/ECS/Lambda task roles
 4. If all fail, `NewAWSBedrockClient` logs the error and automatically falls back to `MockClient`
+
+---
+
+## Diagram 16 — StageTrace / PipelineTrace Class Diagram
+
+```mermaid
+classDiagram
+    class PipelineTrace {
+        +Stages []StageTrace
+        +TotalMs int64
+    }
+
+    class StageTrace {
+        +StageNum int
+        +StageName string
+        +Passed bool
+        +CaughtHere bool
+        +DurationMs int64
+        +Detail map[string]any
+    }
+
+    class Stage1Detail {
+        +matched_patterns []string
+        +pattern_count int
+    }
+
+    class Stage2Detail {
+        +matches []CorpusMatch
+        +searched int
+        +threshold float64
+        +top_similarity float64
+    }
+
+    class Stage3Detail {
+        +model_id string
+        +system_prompt string
+        +user_message string
+        +raw_response string
+        +is_adversarial bool
+        +attack_type string
+        +sophistication string
+        +confidence float64
+    }
+
+    class Stage4Detail {
+        +policy_id string
+        +action string
+        +reason string
+        +rules_evaluated int
+    }
+
+    class Stage5Detail {
+        +model_id string
+        +system_prompt string
+        +user_message string
+        +raw_response string
+        +drift_score float64
+        +threshold float64
+    }
+
+    class PipelineResult {
+        +SessionID string
+        +Decision string
+        +Stage int
+        +Confidence float64
+        +AttackType string
+        +Reason string
+        +Variants []string
+        +Trace *PipelineTrace
+    }
+
+    PipelineResult "1" --> "0..1" PipelineTrace : trace
+    PipelineTrace "1" --> "5" StageTrace : stages[0..4]
+    StageTrace ..> Stage1Detail : stage_num=1
+    StageTrace ..> Stage2Detail : stage_num=2
+    StageTrace ..> Stage3Detail : stage_num=3
+    StageTrace ..> Stage4Detail : stage_num=4
+    StageTrace ..> Stage5Detail : stage_num=5
+```
+
+**Key invariants:**
+- `PipelineTrace.Stages` always has exactly 5 elements — unreached stages have `DurationMs = 0` and empty `Detail`
+- Exactly one stage has `CaughtHere = true` when the pipeline blocks a request; all subsequent stages are unreached
+- `TotalMs` ≈ sum of all `DurationMs` (minor delta from goroutine scheduling for concurrent stages 3 and 5)
+- `Detail` map keys are typed per stage (see column headers above); consumers must assert the type before use
+
+---
+
+## Diagram 17 — API Endpoint Reference Map
+
+All 14 HTTP routes exposed by VaultGuard, grouped by concern:
+
+```mermaid
+graph LR
+    subgraph Attack["Attack & Threat"]
+        A1["POST /api/attack\nFire prebuilt attack"]
+        A2["POST /api/threats/custom\nCustom threat + full trace"]
+    end
+
+    subgraph Corpus["Corpus / ThreatLedger"]
+        C1["GET /api/corpus/stats\nTotal + breakdown counts"]
+        C2["GET /api/corpus/search?q=&limit=\nFull-text pattern search"]
+        C3["GET /api/corpus/graph?threshold=\nSimilarity edge graph"]
+    end
+
+    subgraph Blast["Blast Radius"]
+        B1["GET /api/blast/:sessionID\nBlast risk + affected tools"]
+    end
+
+    subgraph Audit["Audit Chain"]
+        AU1["GET /api/audit/:sessionID\nSigned audit log entries"]
+        AU2["GET /api/audit/public-key\nEd25519 public key (hex)"]
+        AU3["POST /api/audit/:sessionID/replay\nDeterministic replay verification"]
+    end
+
+    subgraph Campaigns["Campaigns"]
+        K1["GET /api/campaigns\nList OWASP campaign definitions"]
+        K2["POST /api/campaigns/:id/run\nExecute campaign + stream results"]
+    end
+
+    subgraph Policy["Policy"]
+        P1["POST /api/policy/:id/probe\nAdversarial boundary probe"]
+    end
+
+    subgraph Agents["Custom Agents (BYOA)"]
+        AG1["POST /api/agents\nRegister custom agent"]
+        AG2["POST /api/agents/:agentId/interact\nWrapped agent interaction"]
+    end
+```
+
+**Rate limiting notes:**
+- `POST /api/attack` and `POST /api/threats/custom` — `AttackLimit` (10 req/s burst 20)
+- `POST /api/policy/:id/probe` — `AttackLimit` (LLM call)
+- `POST /api/agents/:agentId/interact` — `AttackLimit` (LLM call)
+- `GET /api/corpus/graph` — no rate limit (read-only, cached at startup)
+- All other endpoints — global rate limit only
+
+---
+
+## Diagram 18 — Adversarial Probe Algorithm
+
+```mermaid
+flowchart TD
+    Start([POST /api/policy/:id/probe]) --> LoadPolicy[Load policy manifest\nfrom BoltDB by ID]
+    LoadPolicy --> PolicyFound{Policy found?}
+    PolicyFound -- No --> 404[Return 404]
+    PolicyFound -- Yes --> BuildPrompt[Build LLM prompt:\nPolicy rules as context\nRequest 6 boundary-testing\npayloads with rationale]
+    BuildPrompt --> CallLLM[Converse: Nova Pro\nmodel = BEDROCK_POLICY_MODEL]
+    CallLLM --> ParseJSON[Parse JSON array\nof candidate payloads]
+    ParseJSON --> ParseOK{Parse OK?}
+    ParseOK -- No --> Fallback[Return fallback\nhardcoded payloads\nfor known policy types]
+    ParseOK -- Yes --> LoopStart
+
+    subgraph Loop["For each payload (max 6)"]
+        LoopStart([Payload N]) --> RunPipeline[guardian.Run\nMock mode forced\nSession = probe-session-id]
+        RunPipeline --> RecordResult[Record:\n- payload text\n- decision REDACTED/ALLOW\n- stage_caught\n- confidence]
+        RecordResult --> MorePayloads{More?}
+        MorePayloads -- Yes --> LoopStart
+    end
+
+    MorePayloads -- No --> BuildResponse[Assemble ProbeResponse:\npolicy_id\npayloads array]
+    BuildResponse --> Return200([Return 200 JSON])
+```
+
+**Design notes:**
+- The probe always runs payloads through the mock pipeline (not live AWS) regardless of server mode — this ensures probe calls are fast, free, and reproducible
+- The LLM is asked to generate payloads that straddle the decision boundary: some should be blocked, some should slip through — this is intentional, demonstrating the policy's precision vs. recall trade-off
+- Results are NOT stored in BoltDB; probes are ephemeral, repeated calls may return different payloads
+
+---
+
+## Diagram 19 — CustomAgent Struct and Interaction Flow
+
+```mermaid
+classDiagram
+    class CustomAgent {
+        +ID string
+        +SessionID string
+        +Name string
+        +SystemPrompt string
+        +Tools []string
+        +CreatedAt time.Time
+    }
+
+    class InteractRequest {
+        +Message string
+    }
+
+    class InteractResponse {
+        +Blocked bool
+        +ScreenedInput string
+        +AgentResponse string
+        +Trace *PipelineTrace
+        +BlastResult *BlastResult
+        +AuditID string
+    }
+```
+
+```mermaid
+sequenceDiagram
+    participant Judge
+    participant API as API Handler
+    participant GR as GuardianRail
+    participant DB as BoltDB
+    participant LLM as Bedrock (Nova Pro)
+    participant Blast as BlastRadius
+    participant Audit as AuditLogger
+
+    Judge->>API: POST /api/agents (name, system_prompt, tools[])
+    API->>DB: Store CustomAgent{ID, SessionID, ...}
+    API-->>Judge: { agent_id, session_id }
+
+    Judge->>API: POST /api/agents/:agentId/interact\n{ message: "ignore previous instructions..." }
+    API->>DB: Load CustomAgent by agentId
+    API->>GR: Run(ctx, message, sessionID)
+    GR-->>API: PipelineResult{Decision: REDACTED, Trace}
+
+    alt BLOCKED
+        API->>Audit: Log(entry: input + trace, no response)
+        API-->>Judge: { blocked: true, trace, audit_id }
+    else ALLOWED
+        API->>LLM: Converse(ctx, NovaProModel,\n  systemPrompt=agent.SystemPrompt,\n  userMsg=screenedInput)
+        LLM-->>API: agentResponse string
+        API->>Blast: Calculate(sessionID, agentResponse)
+        Blast-->>API: BlastResult{Score, Severity, AffectedTools}
+        API->>Audit: Log(entry: input + trace + response + blast)
+        API-->>Judge: { blocked: false, agent_response,\n  trace, blast_result, audit_id }
+    end
+```
+
+**BoltDB bucket layout for agents:**
+
+| Bucket | Key | Value |
+|--------|-----|-------|
+| `agents` | `{sessionID}/{agentID}` | `JSON(CustomAgent)` |
+| `agent_interactions` | `{agentID}/{interactionID}` | `JSON(InteractResponse)` |
+
+**Audit guarantees for blocked inputs:**
+Every interaction — blocked or allowed — produces a signed audit entry. Blocked entries have `AgentResponse = ""` and `BlastResult = nil` but carry the full `PipelineTrace`. This ensures judges have a tamper-evident record of every attempted bypass, not just successful ones.
