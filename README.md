@@ -1070,15 +1070,15 @@ const (
     // High volume, simple classification — $0.06/$0.24 per 1M tokens
     ModelInjectionClassifier = "amazon.nova-lite-v1:0"
 
-    // Moderate reasoning, moderate volume — $1/$5 per 1M tokens
-    ModelGoalDrift       = "anthropic.claude-haiku-4-5-20251001-v1:0"
-    ModelAmbiguityCheck  = "anthropic.claude-haiku-4-5-20251001-v1:0"
-    ModelBlastAdvisor    = "anthropic.claude-haiku-4-5-20251001-v1:0"
+    // Moderate reasoning, moderate volume — $0.72/$0.72 per 1M tokens
+    ModelGoalDrift       = "meta.llama3-3-70b-instruct-v1:0"
+    ModelAmbiguityCheck  = "meta.llama3-3-70b-instruct-v1:0"
+    ModelBlastAdvisor    = "meta.llama3-3-70b-instruct-v1:0"
 
-    // Complex reasoning, low volume — $3/$15 per 1M tokens
-    ModelPolicyCompiler  = "anthropic.claude-sonnet-4-5-20251001-v1:0"
-    ModelPayloadGen      = "anthropic.claude-sonnet-4-5-20251001-v1:0"
-    ModelAuditReport     = "anthropic.claude-sonnet-4-5-20251001-v1:0"
+    // Complex reasoning, low volume — $0.80/$3.20 per 1M tokens
+    ModelPolicyCompiler  = "amazon.nova-pro-v1:0"
+    ModelPayloadGen      = "amazon.nova-pro-v1:0"
+    ModelAuditReport     = "amazon.nova-pro-v1:0"
 
     // Embeddings — for corpus similarity and goal anchor
     ModelEmbedding       = "amazon.titan-embed-text-v2:0"  // $0.02/1M tokens
@@ -1478,8 +1478,8 @@ Any → hardcoded safe response (last resort, never blocks on model failure)
   □ Amazon Nova Lite (amazon.nova-lite-v1:0)
   □ Amazon Nova Micro (amazon.nova-micro-v1:0)  — backup
   □ Amazon Titan Embed Text v2 (amazon.titan-embed-text-v2:0)
-  □ Anthropic Claude Haiku 4.5 (anthropic.claude-haiku-4-5-...)
-  □ Anthropic Claude Sonnet 4.5 (anthropic.claude-sonnet-4-5-...)
+  □ Meta Llama 3.3 70B Instruct (meta.llama3-3-70b-instruct-v1:0)
+  □ Amazon Nova Pro (amazon.nova-pro-v1:0)
 □ IAM role created with bedrockruntime:InvokeModel permission
 □ Region selected (us-east-1 recommended — best model availability)
 □ AWS credentials available as environment variables on Railway

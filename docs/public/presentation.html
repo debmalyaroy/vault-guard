@@ -1129,16 +1129,20 @@
   const btnNext = document.getElementById('btn-next');
 
   function goTo(idx) {
-    if (idx < 0 || idx >= total) return;
+    if (idx < 0 || idx >= total || idx === current) return;
 
-    // Exit current
-    slides[current].classList.remove('active');
-    slides[current].classList.add(idx > current ? 'exit-left' : '');
-    setTimeout(() => slides[current < idx ? current : idx].classList.remove('exit-left'), 350);
+    const old = current;
+
+    // Exit old slide
+    slides[old].classList.remove('active');
+    if (idx > old) {
+      slides[old].classList.add('exit-left');
+      setTimeout(() => slides[old].classList.remove('exit-left'), 350);
+    }
 
     current = idx;
 
-    // Enter new
+    // Enter new slide
     slides[current].classList.add('active');
     slides[current].classList.remove('exit-left');
 

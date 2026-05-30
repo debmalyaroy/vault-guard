@@ -435,3 +435,99 @@ h3::before {
   transform-origin: top center;
   transition: transform 0.15s ease;
 }
+
+/* ═══════════════════════════════════════════════════
+   COLLAPSIBLE SIDEBAR & ASIDE PANELS
+   Alt+[  toggle sidebar    Alt+]  toggle aside
+   ═══════════════════════════════════════════════════ */
+
+/* ── Sidebar transition ──────────────────────────── */
+.VPSidebar {
+  transition: transform 0.25s ease, visibility 0.25s ease !important;
+}
+
+/* ── Sidebar collapsed ───────────────────────────── */
+@media (min-width: 960px) {
+  html.vg-sidebar-closed {
+    --vp-sidebar-width: 0px;
+  }
+  html.vg-sidebar-closed .VPSidebar {
+    transform: translateX(-272px) !important;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* ── Aside collapsed ─────────────────────────────── */
+@media (min-width: 1280px) {
+  html.vg-aside-closed .VPDoc .aside {
+    display: none !important;
+  }
+  html.vg-aside-closed .VPDoc .content-container {
+    max-width: 100% !important;
+  }
+}
+
+/* ── Panel toggle buttons ────────────────────────── */
+.vg-pt-btn {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 110;
+  width: 18px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.35;
+  border: 1px solid var(--vp-c-border);
+  background: var(--vp-c-bg-alt);
+  color: var(--vp-c-brand-1);
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  padding: 0;
+  font-family: inherit;
+  user-select: none;
+}
+
+.vg-pt-btn:hover {
+  opacity: 1;
+  background: var(--vp-c-brand-soft);
+  border-color: var(--vp-c-brand-1);
+}
+
+/* Sidebar toggle: right edge of sidebar */
+.vg-pt-sidebar-btn {
+  left: calc(var(--vp-sidebar-width, 272px) - 1px);
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
+
+/* When sidebar is closed the CSS var is 0px, so button sits at left:-1px ≈ left:0 */
+html.vg-sidebar-closed .vg-pt-sidebar-btn {
+  border-left: 1px solid var(--vp-c-border);
+  border-radius: 4px;
+  left: 4px;
+}
+
+/* Aside toggle: right edge of viewport */
+.vg-pt-aside-btn {
+  right: 4px;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+}
+
+html.vg-aside-closed .vg-pt-aside-btn {
+  border-right: 1px solid var(--vp-c-border);
+  border-radius: 4px;
+}
+
+/* Only show panel buttons at appropriate breakpoints */
+@media (max-width: 959px) {
+  .vg-pt-sidebar-btn { display: none; }
+}
+@media (max-width: 1279px) {
+  .vg-pt-aside-btn { display: none; }
+}
